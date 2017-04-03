@@ -24,15 +24,16 @@ def main():
   dim = (125, 101, 3)
   offset = dim[0]*dim[1]
 
-  q0 = np.fromfile("policies/cfg_pendulum_sarsa_grid-it0-mp0-run0-_experiment_agent_policy_representation.dat")
-  q1 = np.fromfile("policies/cfg_pendulum_sarsa_grid-it0-mp0-run0-v2-_experiment_agent_policy_representation.dat")
+  q0 = np.fromfile("policies/cfg_pendulum_sarsa_grid-it0-mp0-run0-v0-_experiment_agent_policy_representation.dat")
+  q1 = np.fromfile("policies/cfg_pendulum_sarsa_grid-it0-mp0-run0-v1-_experiment_agent_policy_representation.dat")
 
   csv_data = csv_read(["trajectories/pendulum_sarsa_grid_play-test-0.csv"])
   tr = load_trajectories(csv_data)
 
 
-  see_by_layers(q0-q1, tr, offset)
+  see_by_layers(q1, tr, offset)
 
+  return
 
   p0 = calc_grid_policy(q0, (0, 1), (125, 101, 3))
   show_grid_representation(p0, (0, 1), (125, 101, 1))

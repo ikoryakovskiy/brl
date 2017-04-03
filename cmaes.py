@@ -16,7 +16,7 @@ class CMAES(object):
     dnum = 0
     num = 0
 
-    def __init__(self, size, dsize):
+    def __init__(self, size, dsize, width = 1.0, kind = 'rbf'):
         if (size[2] != dsize[2]):
           raise ValueError('CMAES::init Dimensions are not correct')
 
@@ -47,7 +47,7 @@ class CMAES(object):
         locy = np.asarray(locy, dtype='float64')
         locz = np.asarray(locz, dtype='float64')
 
-        sigma = np.maximum(1.0/np.power(2*dsize[0], 0.5), 1.0/np.power(2*dsize[1], 0.5)) #* 0.5
+        sigma = width * np.maximum(1.0/np.power(2*dsize[0], 0.5), 1.0/np.power(2*dsize[1], 0.5))
         print(sigma)
 
         #print (locz)
@@ -57,7 +57,11 @@ class CMAES(object):
         clocy = locy.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         clocz = locz.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         #print (np.ctypeslib.as_array((ctypes.c_double * dnum).from_address(ctypes.addressof(clocz.contents))))
-        self.obj = lrepc.rbf_new(csize, cdsize, ctypes.c_int(self.dnum), clocx, clocy, clocz, ctypes.c_double(sigma))
+
+        if kind == 'rbf':
+          self.obj = lrepc.rbf_new(csize, cdsize, ctypes.c_int(self.dnum), clocx, clocy, clocz, ctypes.c_double(sigma))
+        else:
+          self.obj = lrepc.nrbf_new(csize, cdsize, ctypes.c_int(self.dnum), clocx, clocy, clocz, ctypes.c_double(sigma))
 
     def initial(self, initial_guess):
         f_init = self.dnum * [1]
@@ -109,7 +113,7 @@ class CMAES(object):
         #opts['maxiter'] = 3000
 
         es = cma.CMAEvolutionStrategy(f_init, 1, opts) #self.dnum * [-500]
-        es.optimize(self.objective)#, 5000, 5000)
+        es.optimize(self.objective)#, 50, 50)
 
         print('termination by', es.stop())
         res = es.result()
