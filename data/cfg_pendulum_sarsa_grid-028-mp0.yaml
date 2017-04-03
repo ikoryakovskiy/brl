@@ -1,0 +1,75 @@
+experiment:
+  runs: 1
+  trials: 0
+  steps: 500000
+  rate: 0
+  test_interval: 10
+  output: cfg_pendulum_sarsa_grid-028-mp0
+  environment:
+    model:
+      control_step: 0.03
+      integration_steps: 5
+      dynamics:
+        param: cfg/pendulum/params.txt:28
+        type: dynamics/pendulum
+      type: model/dynamical
+    task:
+      timeout: 2.99
+      randomization: 0.01
+      wrap_angle: 0
+      type: task/pendulum/swingup
+    exporter: 0
+    type: environment/modeled
+  agent:
+    policy:
+      discretizer:
+        min: ../../../../environment/task/action_min
+        max: ../../../../environment/task/action_max
+        steps: [ 3 ]
+        type: discretizer/uniform
+      projector:
+        discretizer:
+          min: ../../../../../environment/task/observation_min+../../../../../environment/task/action_min
+          max: ../../../../../environment/task/observation_max+../../../../../environment/task/action_max
+          steps: [ 125, 101, 3 ]
+          type: discretizer/uniform
+        type: projector/grid/index
+      representation:
+        init_min: [ 0 ]
+        init_max: [ 0 ]
+        memory: ../../projector/memory
+        outputs: 1
+        output_min: [  ]
+        output_max: [  ]
+        type: representation/parameterized/linear
+      sampler:
+        rand_max: 0
+        epsilon: 0.05
+        decay: 1e-7
+        type: sampler/epsilon_greedy
+      type: mapping/policy/value/q
+    predictor:
+      alpha: 0.2
+      gamma: 0.97
+      lambda: 0.65
+      projector: ../../policy/projector
+      representation: ../../policy/representation
+      trace:
+        type: trace/enumerated/replacing
+      importer: 0
+      exporter: 0
+      type: predictor/sarsa
+    type: agent/td
+  test_agent:
+    policy:
+      discretizer: ../../../agent/policy/discretizer
+      projector: ../../../agent/policy/projector
+      representation: ../../../agent/policy/representation
+      sampler:
+        rand_max: 0
+        type: sampler/greedy
+      type: mapping/policy/value/q
+    type: agent/fixed
+  save_every: run
+  load_file: ""
+  type: experiment/online_learning
