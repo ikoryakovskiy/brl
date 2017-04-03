@@ -47,7 +47,7 @@ class CMAES(object):
         locy = np.asarray(locy, dtype='float64')
         locz = np.asarray(locz, dtype='float64')
 
-        sigma = np.maximum(1.0/np.power(2*dsize[0], 0.5), 1.0/np.power(2*dsize[1], 0.5)) * 0.5
+        sigma = np.maximum(1.0/np.power(2*dsize[0], 0.5), 1.0/np.power(2*dsize[1], 0.5)) #* 0.5
         print(sigma)
 
         #print (locz)
