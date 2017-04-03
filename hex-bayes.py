@@ -1,5 +1,3 @@
-#!/home/ikoryakovskiy/virtualenv-15.1.0/myVE/bin/python
-
 import os
 
 r = os.system("g++ -O3 -c -fPIC repc.c -o repc.o -fopenmp")

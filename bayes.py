@@ -61,7 +61,7 @@ def main():
   save_grid_representation(tm, "policies/cfg_pendulum_sarsa_grid-init-mp0-run0-_experiment_agent_policy_representation.dat")
   ##############################################
 
-  #
+  # Learning representation
   Q_init = tm
 
   Q_hat = mp_cma_run(args, Q_init, size, dsize)
