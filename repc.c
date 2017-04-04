@@ -1,3 +1,7 @@
+// Created on Tue Mar 28 21:04:37 2017
+//
+// @author: Ivan Koryakovskiy <i.koryakovskiy@gmail.com>
+
 #include <iostream>
 #include <iomanip>
 #include <math.h>

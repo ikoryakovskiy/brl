@@ -2,7 +2,7 @@
 """
 Created on Tue Mar 28 21:04:37 2017
 
-@author: ivan
+@author: Ivan Koryakovskiy <i.koryakovskiy@gmail.com>
 """
 import numpy as np
 import ctypes
@@ -93,19 +93,18 @@ class CMAES(object):
         cfeature = feature.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         output = lrepc.rbf_evaluate(self.obj, cfeature)
 
+        # provide a reference to a buffer in C library, no copy is done for speed reasons
         ArrayType = ctypes.c_double*self.num
         array_pointer = ctypes.cast(output, ctypes.POINTER(ArrayType))
         return np.frombuffer(array_pointer.contents)
 
-    def objective(self, s):
-        #print(s)
-        q_hat = self.evaluate(s)
-        n = np.linalg.norm(q_hat - self.q) + 1*np.linalg.norm(s)
-        #print (np.linalg.norm(s))
-        return n
+    def objective(self, x, *q_target):
+        q_hat = self.evaluate(x)
+        cost = np.linalg.norm(q_hat - q_target[0]) + 1*np.linalg.norm(x)
+        return cost
 
     def optimize(self, q, f_init):
-        self.q = q
+        #self.q = q
 
         opts = cma.CMAOptions()
         opts['verb_log'] = 0
@@ -113,9 +112,19 @@ class CMAES(object):
         #opts['maxiter'] = 3000
 
         es = cma.CMAEvolutionStrategy(f_init, 1, opts) #self.dnum * [-500]
-        es.optimize(self.objective)#, 50, 50)
+        es.optimize(self.objective, 50, 50, args = (q,))#, 50, 50)
 
+        print("\n\n")
         print('termination by', es.stop())
         res = es.result()
+
+        q_hat_ref = self.evaluate(res[0])
+        print(res[0])
+        print(q_hat_ref)
+        fc = self.objective(res[0], q)
+        rc = np.linalg.norm(q_hat_ref - q) + 1*np.linalg.norm(res[0])
+        print("Feature cost {}, representation cost {}".format(fc, rc))
+        print("\n\n")
+
         es.stop()
         return res

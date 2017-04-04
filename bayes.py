@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 
-""" RBF approximation of Value Functions."""
+"""
+Created on Tue Mar 28 21:04:37 2017
+
+RBF approximation of Value Functions
+
+@author: Ivan Koryakovskiy <i.koryakovskiy@gmail.com>
+"""
 
 from __future__ import division, print_function, absolute_import
 
@@ -38,18 +44,19 @@ def main():
 
   ##############################################
   #rbf_test()
-  #cma_test()
+  cma_test()
   #mp_cma_test()
-  #return
+  return
   ##############################################
 
   # Import data
   n = 50
   size  = (125, 101, 3)
-  dsize = (10, 10, 3)
-
   offset = size[0]*size[1]
   num = np.prod(size)
+
+  dsize = (3, 3, 3)
+  doffset = dsize[0]*dsize[1]
 
   train = np.zeros((n, num))
   for i in range(0, n):
@@ -67,15 +74,24 @@ def main():
 
   Q_hat, F_hat = mp_cma_run(args, Q_init, size, dsize, width = 0.4, kind = 'rbf')
 
-  fname = "cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat"
+  fname = "cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat"
   Q_hat.tofile("policies/q_{}".format(fname))
   F_hat.tofile("policies/f_{}".format(fname))
 
   print(F_hat)
 
+  mp_size = (size[0], size[1], 1)
+  mp_dsize = (dsize[0], dsize[1], 1)
+  cmaes = CMAES(mp_size, mp_dsize, width = 0.4, kind = 'rbf')
   for i in range(0, 3):
-    show_grid_representation(Q_init[offset*i:offset*(i+1)], (0, 1), (125, 101, 1))
+    #show_grid_representation(Q_init[offset*i:offset*(i+1)], (0, 1), (125, 101, 1))
     show_grid_representation(Q_hat[offset*i:offset*(i+1)], (0, 1), (125, 101, 1))
+    q_hat_ff = cmaes.evaluate(F_hat[doffset*i:doffset*(i+1)])
+    q_init = Q_init[offset*i:offset*(i+1)]
+
+    show_grid_representation(q_hat_ff, (0, 1), (125, 101, 1))
+
+
   waitforbuttonpress()
 
   return
@@ -141,7 +157,6 @@ def mp_cma_run(args, Q_init, size, dsize, width = 0.4, kind = 'rbf'):
   mp_dsize = (dsize[0], dsize[1], 1)
   res = do_multiprocessing_pool(args, q_inits, mp_size, mp_dsize, width, kind)
 
-
   Q_hat = np.empty(Q_init.shape)
   F_hat = np.empty(dnum, )
   for i in range(actions):
@@ -152,20 +167,22 @@ def mp_cma_run(args, Q_init, size, dsize, width = 0.4, kind = 'rbf'):
 ######################################################################################
 def rbf_test():
   size  = (125, 101, 3)
-  num = np.prod(size)
   dsize = (10, 10, 3)
   dnum = np.prod(dsize)
   offset = size[0]*size[1]
 
   cmaes = CMAES(size, dsize, width = 0.4, kind = 'rbf')
 
-  f_init = 500*np.random.uniform(-1, 1, size=(1, dnum))
-  #f_init = np.ones([1, dnum]) * 500
-  #f_init[0, 0] = -500
+  #f_init = 500*np.random.uniform(-1, 1, size=(1, dnum))
+  f_init = np.ones([1, dnum]) * 0
+  f_init[0, 0] = -500
   #f_init[0, 1] = 500
   q_init_ref = cmaes.evaluate(f_init)
   for i in range(3):
     show_grid_representation(q_init_ref[offset*i:offset*(i+1)], (0, 1), (size[0], size[1], 1))
+
+  q_init_ref.tofile("q_rbf_test.dat")
+  f_init.tofile("f_rbf_test.dat")
 
   waitforbuttonpress()
 
@@ -178,7 +195,8 @@ def cma_test():
 
   f_true = np.array([[0, 500, 0, 0, 0, -500]], dtype='float64')
   q_init_ref = cmaes.evaluate(f_true)
-  q_init = np.copy(q_init_ref)
+  q_init = np.empty(q_init_ref.shape)
+  np.copyto(q_init, q_init_ref)
 
   cmaes = CMAES(size, dsize)
   f_init = cmaes.initial(q_init)
@@ -187,7 +205,17 @@ def cma_test():
   q_hat = cmaes.evaluate(f_hat[0])
   print(f_hat[0], f_hat[1])
 
-  print(cmaes.objective(np.array(f_true)))
+  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
+  print(cmaes.objective(np.array(f_hat[0]), q_init))
+  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
+  print(cmaes.objective(np.array(f_hat[0]), q_init))
+  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
+  print(cmaes.objective(np.array(f_hat[0]), q_init))
+  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
+  print(cmaes.objective(np.array(f_hat[0]), q_init))
+  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
+  print(cmaes.objective(np.array(f_hat[0]), q_init))
+
   show_grid_representation(q_init, (0, 1), (size[0], size[1], 1))
   show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
 
@@ -221,21 +249,21 @@ def mp_cma_test(args):
 
 ######################################################################################
 def mp_run(size, dsize, width, kind, q_init):
-  print(size, dsize)
   cmaes = CMAES(size, dsize, width, kind)
   f_init = cmaes.initial(q_init)
-  print(f_init)
   f_hat = cmaes.optimize(q_init, f_init)
-  q_hat = cmaes.evaluate(f_hat[0])
+  q_hat_ref = cmaes.evaluate(f_hat[0])
+  q_hat = np.copy(q_hat_ref)
   print(f_hat[0], f_hat[1])
+  print(q_hat)
   return (q_hat, f_hat[0])
 
 ######################################################################################
-def do_multiprocessing_pool(args, q_initss, size, dsize, width, kind):
+def do_multiprocessing_pool(args, q_inits, size, dsize, width, kind):
   """Do multiprocesing"""
   pool = multiprocessing.Pool(args.cores)
   func = partial(mp_run, size, dsize, width, kind)
-  res = pool.map(func, q_initss)
+  res = pool.map(func, q_inits)
   pool.close()
   pool.join()
   return res
