@@ -16,7 +16,7 @@ class CMAES(object):
     dnum = 0
     num = 0
 
-    def __init__(self, size, dsize, width = 1.0, kind = 'rbf'):
+    def __init__(self, size, dsize, width = 0.4, kind = 'rbf'):
         if (size[2] != dsize[2]):
           raise ValueError('CMAES::init Dimensions are not correct')
 
