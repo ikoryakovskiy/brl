@@ -65,9 +65,9 @@ def main():
   # Learning representation
   Q_init = tm
 
-  Q_hat, F_hat = mp_cma_run(args, Q_init, size, dsize, width = 0.4, kind = 'nrbf')
+  Q_hat, F_hat = mp_cma_run(args, Q_init, size, dsize, width = 0.4, kind = 'rbf')
 
-  fname = "cfg_pendulum_sarsa_grid-it0-mp0-run0-v1-_experiment_agent_policy_representation.dat"
+  fname = "cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat"
   Q_hat.tofile("policies/q_{}".format(fname))
   F_hat.tofile("policies/f_{}".format(fname))
 
