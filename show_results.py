@@ -4,34 +4,37 @@
 
 from __future__ import division, print_function, absolute_import
 
-#import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
-import pickle
 
 # local
+from cmaes import CMAES
 from anneal import *
 from extra import *
 from optimize import *
-sys.path.append('/home/ivan/work/scripts/py')
-from my_file.io import *
-from my_plot.plot import *
-from my_rl.gridworld import *
-from my_csv.utils import *
+from py.my_file.io import *
+from py.my_plot.plot import *
+from py.my_rl.gridworld import *
+from py.my_csv.utils import *
 
 def main():
-  dim = (125, 101, 3)
-  offset = dim[0]*dim[1]
+  size  = (125, 101, 3)
+  dsize = (10, 10, 3)
+  offset = size[0]*size[1]
 
-  q0 = np.fromfile("policies/cfg_pendulum_sarsa_grid-it0-mp0-run0-v0-_experiment_agent_policy_representation.dat")
-  q1 = np.fromfile("policies/cfg_pendulum_sarsa_grid-it0-mp0-run0-v1-_experiment_agent_policy_representation.dat")
+  cmaes = CMAES(size, dsize, width = 0.4, kind = 'nrbf')
+
+  q0 = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-nrbf-_experiment_agent_policy_representation.dat")
+  f0 = np.fromfile("policies/f_cfg_pendulum_sarsa_grid-it0-mp0-run0-nrbf-_experiment_agent_policy_representation.dat")
+
+  q0_ref = cmaes.evaluate(f0)
 
   csv_data = csv_read(["trajectories/pendulum_sarsa_grid_play-test-0.csv"])
   tr = load_trajectories(csv_data)
 
 
-  see_by_layers(q1, tr, offset)
+  see_by_layers(q0, tr, offset)
+  see_by_layers(q0_ref, tr, offset)
 
   return
 
