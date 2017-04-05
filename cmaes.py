@@ -93,7 +93,7 @@ class CMAES(object):
         cfeature = feature.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         output = lrepc.rbf_evaluate(self.obj, cfeature)
 
-        # provide a reference to a buffer in C library, no copy is done for speed reasons
+        # provide a *reference* to a buffer in C library, no copy is done for speed reasons
         ArrayType = ctypes.c_double*self.num
         array_pointer = ctypes.cast(output, ctypes.POINTER(ArrayType))
         return np.frombuffer(array_pointer.contents)
@@ -103,7 +103,7 @@ class CMAES(object):
         cost = np.linalg.norm(q_hat - q_target[0]) + 1*np.linalg.norm(x)
         return cost
 
-    def optimize(self, q, f_init):
+    def optimize(self, q_init, f_init):
         #self.q = q
 
         opts = cma.CMAOptions()
@@ -112,7 +112,7 @@ class CMAES(object):
         #opts['maxiter'] = 3000
 
         es = cma.CMAEvolutionStrategy(f_init, 1, opts) #self.dnum * [-500]
-        es.optimize(self.objective, 50, 50, args = (q,))#, 50, 50)
+        es.optimize(self.objective, 3000, 3000, args = (q_init,))#, 50, 50)
 
         print("\n\n")
         print('termination by', es.stop())
@@ -121,8 +121,8 @@ class CMAES(object):
         q_hat_ref = self.evaluate(res[0])
         print(res[0])
         print(q_hat_ref)
-        fc = self.objective(res[0], q)
-        rc = np.linalg.norm(q_hat_ref - q) + 1*np.linalg.norm(res[0])
+        fc = self.objective(res[0], q_init)
+        rc = np.linalg.norm(q_hat_ref - q_init) + 1*np.linalg.norm(res[0])
         print("Feature cost {}, representation cost {}".format(fc, rc))
         print("\n\n")
 

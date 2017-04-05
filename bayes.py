@@ -44,8 +44,8 @@ def main():
 
   ##############################################
   #rbf_test()
-  cma_test()
-  #mp_cma_test()
+  #cma_test()
+  mp_cma_test(args)
   return
   ##############################################
 
@@ -205,16 +205,12 @@ def cma_test():
   q_hat = cmaes.evaluate(f_hat[0])
   print(f_hat[0], f_hat[1])
 
+  #z_hat = cmaes.evaluate(f_hat[0])
+  #cost = np.linalg.norm(z_hat - q_init) + 1*np.linalg.norm(f_hat[0])
+  #print (cost)
+
   print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
-  print(cmaes.objective(np.array(f_hat[0]), q_init))
-  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
-  print(cmaes.objective(np.array(f_hat[0]), q_init))
-  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
-  print(cmaes.objective(np.array(f_hat[0]), q_init))
-  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
-  print(cmaes.objective(np.array(f_hat[0]), q_init))
-  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
-  print(cmaes.objective(np.array(f_hat[0]), q_init))
+  print(cmaes.objective(f_hat[0], q_init))
 
   show_grid_representation(q_init, (0, 1), (size[0], size[1], 1))
   show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
@@ -225,6 +221,8 @@ def cma_test():
 def mp_cma_test(args):
   size  = (125, 101, 1)
   dsize = (3, 2, 1)
+  width = 0.4
+  kind = 'rbf'
 
   cmaes = CMAES(size, dsize)
 
@@ -237,11 +235,11 @@ def mp_cma_test(args):
     q_inits_ref = cmaes.evaluate(f_trues[i])
     q_inits.append(np.copy(q_inits_ref))
 
-  q_hats = do_multiprocessing_pool(args, q_inits, size, dsize)
+  q_hats = do_multiprocessing_pool(args, q_inits, size, dsize, width, kind)
 
   for i in range(2):
     cmaes.q = q_inits[i]
-    print(cmaes.objective(np.array(f_trues[i])))
+    print(cmaes.objective(f_trues[i]))
     show_grid_representation(q_inits[i], (0, 1), (size[0], size[1], 1))
     show_grid_representation(q_hats[i], (0, 1), (size[0], size[1], 1))
 
