@@ -22,17 +22,17 @@ from py.my_csv.utils import *
 
 def main():
   size  = (125, 101, 3)
-  dsize = (3, 3, 3)
+  dsize = (10, 10, 3)
   offset = size[0]*size[1]
 
-  with CMAES(size, dsize, width = 0.4, kind = 'nrbf') as cmaes:
+  with CMAES(size, dsize, width = 0.4, kind = 'rbf') as cmaes:
 
     #q0 = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat")
     #f0 = np.fromfile("policies/f_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat")
     #q0 = load_grid_representation("q_rbf_test.dat")
     #f0 = np.fromfile("f_rbf_test.dat")
-    q0 = load_grid_representation("policies/q_testing.dat")
-    f0 = np.fromfile("policies/f_testing.dat")
+    q0 = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
+    f0 = np.fromfile("policies/f_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
 
     q0_ref = cmaes.evaluate(f0)
 
@@ -40,8 +40,13 @@ def main():
     tr = load_trajectories(csv_data)
 
 
-    see_by_layers(q0, tr, offset)
-    see_by_layers(q0_ref, tr, offset)
+    p0 = calc_grid_policy(q0, (0, 1), (125, 101, 3))
+    show_grid_representation(p0, (0, 1), (125, 101, 1))
+    plt.scatter(tr[:,0], tr[:,1], c='w', s=40, marker='+')
+    plt.waitforbuttonpress()
+
+    #see_by_layers(q0, tr, offset)
+    #see_by_layers(q0_ref, tr, offset)
 
   return
 
