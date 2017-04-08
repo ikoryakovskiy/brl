@@ -56,7 +56,7 @@ def main():
   offset = size[0]*size[1]
   num = np.prod(size)
 
-  dsize = (3, 3, 3)
+  dsize = (10, 10, 3)
   doffset = dsize[0]*dsize[1]
 
   train = np.zeros((n, num))
@@ -72,17 +72,17 @@ def main():
 
   # Learning representation
   width = 0.4
-  kind = 'nrbf'
+  kind = 'rbf'
   Q_target = tm
   Q_init = np.zeros(Q_target.size)
 
   Q_hat, F_hat = mp_cma_run(args, Q_target, Q_init, size, dsize, width, kind)
 
-  fname = "testing.dat"
+  fname = "cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat"
   Q_hat.tofile("policies/q_{}".format(fname))
   F_hat.tofile("policies/f_{}".format(fname))
 
-  print(F_hat)
+  print("Saving complete")
 
   mp_size = (size[0], size[1], 1)
   mp_dsize = (dsize[0], dsize[1], 1)
