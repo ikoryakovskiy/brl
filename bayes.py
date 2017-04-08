@@ -32,16 +32,7 @@ from py.my_plot.plot import *
 from py.my_rl.gridworld import *
 from py.my_csv.utils import *
 
-def main():
-  # parse arguments
-  parser = argparse.ArgumentParser(description="Parser")
-  parser.add_argument('-c', '--cores', type=int, help='specify maximum number of cores')
-  args = parser.parse_args()
-  if args.cores:
-      args.cores = min(multiprocessing.cpu_count(), args.cores)
-  else:
-      args.cores = min(multiprocessing.cpu_count(), 32)
-  print('Using {} cores.'.format(args.cores))
+def main(args):
 
   ##############################################
   #rbf_test()
@@ -56,7 +47,7 @@ def main():
   offset = size[0]*size[1]
   num = np.prod(size)
 
-  dsize = (3, 3, 3)
+  dsize = (10, 10, 3)
   doffset = dsize[0]*dsize[1]
 
   train = np.zeros((n, num))
@@ -72,13 +63,22 @@ def main():
 
   # Learning representation
   width = 0.4
-  kind = 'rbf'
+  if args.rbf:
+    kind = 'rbf'
+  elif args.nrbf:
+    kind = 'nrbf'
+  else:
+    kind = 'rbf'
   Q_target = tm
   Q_init = np.zeros(Q_target.size)
 
   Q_hat, F_hat = mp_cma_run(args, Q_target, Q_init, size, dsize, width, kind)
 
-  fname = "cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf2-test-_experiment_agent_policy_representation.dat"
+  # Saving
+  if args.output_file is None:
+    fname = "cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf2-test-_experiment_agent_policy_representation.dat"
+  else:
+    fname = args.output_file
   Q_hat.tofile("policies/q_{}".format(fname))
   F_hat.tofile("policies/f_{}".format(fname))
 
@@ -281,5 +281,24 @@ def do_multiprocessing_pool(args, q_targets, q_inits, size, dsize, width, kind):
 ######################################################################################
 
 if __name__ == "__main__":
-    main()
+  # parse arguments
+  parser = argparse.ArgumentParser(description="Parser")
+  parser.add_argument('-c', '--cores', type=int,
+                      help='Maximum number of cores used by multiprocessing.pool')
+  parser.add_argument("-o", "--output_file", help="Output file")
+  parser.add_argument("-r", "--rbf", action='store_true', help="Use RBF in representation")
+  parser.add_argument("-n", "--nrbf", action='store_true', help="Use NRBF in representation")
+  args = parser.parse_args()
 
+  print (args)
+
+  if args.rbf and args.nrbf:
+    parser.error("Select one representation type")
+
+  # apply settings
+  if args.cores:
+      args.cores = min(multiprocessing.cpu_count(), args.cores)
+  else:
+      args.cores = min(multiprocessing.cpu_count(), 32)
+  print('Using {} cores.'.format(args.cores))
+  main(args)

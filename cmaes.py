@@ -127,7 +127,7 @@ class CMAES(object):
 
     # actual run with
     es = cma.CMAEvolutionStrategy(f_init, 1, opts)
-    es.optimize(self.objective, args = (q_target,))#, 50, 50)
+    es.optimize(self.objective, args = (q_target,))#, 3, 3)
 
     # finalize
     res = es.result()
