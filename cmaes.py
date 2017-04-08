@@ -18,7 +18,7 @@ class CMAES(object):
 
     def __init__(self, size, dsize, width = 0.4, kind = 'rbf', name = 'default'):
         if (size[2] != dsize[2]):
-          raise ValueError('CMAES::init Dimensions are not correct')
+          raise ValueError('CMAES::init Input dimensions are not correct')
 
         self.num = np.prod(size)
         self.size = size
@@ -102,21 +102,22 @@ class CMAES(object):
         return f_init
 
     def evaluate(self, feature):
-        feature_old = feature
-        print(feature_old.base)
-        print(feature_old.flags)
-        #feature = np.array([-500, 500, -500, 500, -500, 500], dtype='float64')
-        #for i in range(0, len(feature)):
-        #  feature[i] = feature_old[i]
-
-        #feature = np.copy(feature_old)
+        #print(feature.base)
+        #print(feature.flags)
+        feature = np.copy(feature)
         #print(feature.base)
         cfeature = feature.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-        print('Evaluate::feature {}'.format(feature))
-        print('Evaluate::feature shape {}'.format(feature.shape))
-        print('Evaluate::cfeature {}'.format([ cfeature[i] for i in range(0, len(feature))]))
+        #print('Evaluate::feature {}'.format(feature))
+        #print('Evaluate::feature shape {}'.format(feature.shape))
+        #print('Evaluate::cfeature {}'.format([ cfeature[i] for i in range(0, len(feature))]))
+        # test if provided data is contiguous
+        cf = [ cfeature[i] for i in range(0, len(feature))]
+        z = [cf[i] != feature[i] for i in range(0, len(feature))]
+        if any(z):
+          raise ValueError('CMAES::evaluate Provided data is not contiguous')
+
         output = lrepc.rbf_evaluate(self.obj, cfeature)
-        print('Evaluate::feature2 {}'.format(feature))
+        #print('Evaluate::feature2 {}'.format(feature))
         # provide a *reference* to a buffer in C library, no copy is done for speed reasons
         ArrayType = ctypes.c_double*self.num
         array_pointer = ctypes.cast(output, ctypes.POINTER(ArrayType))
@@ -128,7 +129,7 @@ class CMAES(object):
         cost = np.linalg.norm(q_hat - q_target[0]) + 1*np.linalg.norm(x)
         return cost
 
-    def optimize(self, q_init, f_init):
+    def optimize(self, q_target, f_init):
         #self.q = q
 
         opts = cma.CMAOptions()
@@ -139,7 +140,7 @@ class CMAES(object):
         print('Initial feature {}'.format(f_init))
         print('Initial feature shape {}'.format(f_init.shape))
         es = cma.CMAEvolutionStrategy(f_init, 1, opts) #self.dnum * [-500]
-        es.optimize(self.objective, 50, 50, args = (q_init,))#, 50, 50)
+        es.optimize(self.objective, args = (q_target,))#, 50, 50)
 
         #print("\n\n")
         #print('termination by', es.stop())
@@ -148,8 +149,8 @@ class CMAES(object):
         #q_hat_ref = self.evaluate(res[0])
         #print(res[0])
         #print(q_hat_ref)
-        #fc = self.objective(res[0], q_init)
-        #rc = np.linalg.norm(q_hat_ref - q_init) + 1*np.linalg.norm(res[0])
+        #fc = self.objective(res[0], q_target)
+        #rc = np.linalg.norm(q_hat_ref - q_target) + 1*np.linalg.norm(res[0])
         #print("Feature cost {}, representation cost {}".format(fc, rc))
         #print("\n\n")
 

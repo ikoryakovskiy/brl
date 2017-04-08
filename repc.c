@@ -151,7 +151,7 @@ class rbf : public rbfBase
 
     virtual double *evaluate(const double *f)
     {
-
+/*
       for (int z = 0; z < size_[2]; z++)
         for (int i = cz_be_en_[z][0]; i <= cz_be_en_[z][1]; i++)
         {
@@ -161,7 +161,7 @@ class rbf : public rbfBase
           std::cout << "@" << &(f[didx]) << ": f[" << didx << "] = " << f[didx] << std::endl;
         }
       return q_;
-
+*/
 
       memset(q_, 0, sizeof(double)*size_[0]*size_[1]*size_[2]);
 
@@ -275,7 +275,7 @@ extern "C"
 
   double *rbf_evaluate(rbfBase *r, const double *f)
   {
-    std::cout << "Evaluate:: class " << r  << "; feature " << f << std::endl;
+    //std::cout << "Evaluate:: class " << r  << "; feature " << f << std::endl;
     return r->evaluate(f);
   }
 

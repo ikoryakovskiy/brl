@@ -223,43 +223,51 @@ def mp_cma_test(args):
   size  = (125, 101, 1)
   dsize = (3, 2, 1)
   width = 0.4
-  pools = 1
+  pools = 2
   kind = 'rbf'
 
   with CMAES(size, dsize, width, kind, name='mp_cma_test') as cmaes:
 
     f_trues = []
     f_trues.append(np.array([-500, 500, -500, 500, -500, 500], dtype='float64'))
-    f_trues.append(np.array([[-500, 0, 0, 0, 0, 500]], dtype='float64'))
+    f_trues.append(np.array([-500, 0, 0, 0, 0, 500], dtype='float64'))
 
+    q_targets = []
     q_inits = []
     for i in range(pools):
-      q_inits_ref = cmaes.evaluate(f_trues[i])
-      q_inits.append(np.copy(q_inits_ref))
+      q_target_ref = cmaes.evaluate(f_trues[i])
+      q_targets.append(np.copy(q_target_ref))
+      q_inits.append(np.empty(q_target_ref.shape))
 
-    qf_hats = do_multiprocessing_pool(args, q_inits, size, dsize, width, kind)
+    qf_hats = do_multiprocessing_pool(args, q_targets, q_inits, size, dsize, width, kind)
 
     for i in range(pools):
-      print(cmaes.objective(f_trues[i], q_inits[i]))
-      #show_grid_representation(q_inits[i], (0, 1), (size[0], size[1], 1))
+      #print(cmaes.objective(f_trues[i], q_inits[i]))
+      show_grid_representation(q_inits[i], (0, 1), (size[0], size[1], 1))
+      show_grid_representation(q_targets[i], (0, 1), (size[0], size[1], 1))
       qf_hat = qf_hats[i]
       q_hat = qf_hat[0]
       f_hat = qf_hat[1]
-      #show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
+      show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
+      q_hat_eval = cmaes.evaluate(f_hat)
+      show_grid_representation(q_hat_eval, (0, 1), (size[0], size[1], 1))
 
-    #waitforbuttonpress()
+    waitforbuttonpress()
 
 ######################################################################################
-def mp_run(size, dsize, width, kind, q_init):
-  print("Starting mp")
-  with CMAES(size, dsize, width, kind, name = multiprocessing.current_process().name) as cmaes:
+def mp_run(q_targets, q_inits, size, dsize, width, kind, n):
+  #print("Starting mp")
+  q_target = q_targets[n]
+  q_init = q_inits[n]
+  th_name = multiprocessing.current_process().name
+  with CMAES(size, dsize, width, kind, name = th_name) as cmaes:
     f_init = cmaes.initial(q_init)
-    print("Starting optimize")
-    f_hat = cmaes.optimize(q_init, f_init)
-    print("Finishing optimize")
-    print(f_hat[0])
+    #print("Starting optimize")
+    f_hat = cmaes.optimize(q_target, f_init)
+    #print("Finishing optimize")
+    #print(f_hat[0])
     q_hat_ref = cmaes.evaluate(f_hat[0])
-    print("Finishing evaluate")
+    #print("Finishing evaluate")
     q_hat = np.copy(q_hat_ref)
     #print(f_hat[0], f_hat[1])
     #print(q_hat)
@@ -268,11 +276,13 @@ def mp_run(size, dsize, width, kind, q_init):
     #return (0, 0)
 
 ######################################################################################
-def do_multiprocessing_pool(args, q_inits, size, dsize, width, kind):
+def do_multiprocessing_pool(args, q_targets, q_inits, size, dsize, width, kind):
   """Do multiprocesing"""
+  if (len(q_targets) != len(q_inits)):
+    raise ValueError('bayes::do_multiprocessing_pool Input dimensions are not correct')
   pool = multiprocessing.Pool(args.cores)
-  func = partial(mp_run, size, dsize, width, kind)
-  res = pool.map(func, q_inits)
+  func = partial(mp_run, q_targets, q_inits, size, dsize, width, kind)
+  res = pool.map(func, range(0, len(q_targets)))
   pool.close()
   pool.join()
   return res
