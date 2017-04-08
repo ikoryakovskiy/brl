@@ -98,17 +98,30 @@ class CMAES(object):
           f_idx = int(f_idx_i + f_idx_j*self.dsize[0] + f_idx_k*self.dsize[0]*self.dsize[1])
           #print(f_idx_i, f_idx_j, f_idx_k, f_idx)
           f_init[f_idx] = guess
+        f_init = np.array(f_init, dtype='float64')
         return f_init
 
     def evaluate(self, feature):
-        #cfeature = feature.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-        #output = lrepc.rbf_evaluate(self.obj, cfeature)
+        feature_old = feature
+        print(feature_old.base)
+        print(feature_old.flags)
+        #feature = np.array([-500, 500, -500, 500, -500, 500], dtype='float64')
+        #for i in range(0, len(feature)):
+        #  feature[i] = feature_old[i]
 
+        #feature = np.copy(feature_old)
+        #print(feature.base)
+        cfeature = feature.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+        print('Evaluate::feature {}'.format(feature))
+        print('Evaluate::feature shape {}'.format(feature.shape))
+        print('Evaluate::cfeature {}'.format([ cfeature[i] for i in range(0, len(feature))]))
+        output = lrepc.rbf_evaluate(self.obj, cfeature)
+        print('Evaluate::feature2 {}'.format(feature))
         # provide a *reference* to a buffer in C library, no copy is done for speed reasons
-        #ArrayType = ctypes.c_double*self.num
-        #array_pointer = ctypes.cast(output, ctypes.POINTER(ArrayType))
-        #return np.frombuffer(array_pointer.contents)
-        return np.zeros([self.num,])
+        ArrayType = ctypes.c_double*self.num
+        array_pointer = ctypes.cast(output, ctypes.POINTER(ArrayType))
+        return np.frombuffer(array_pointer.contents)
+        #return np.zeros([self.num,])
 
     def objective(self, x, *q_target):
         q_hat = self.evaluate(x)
@@ -123,7 +136,8 @@ class CMAES(object):
         #opts['tolstagnation'] = 0
         #opts['maxiter'] = 3000
 
-        print(f_init)
+        print('Initial feature {}'.format(f_init))
+        print('Initial feature shape {}'.format(f_init.shape))
         es = cma.CMAEvolutionStrategy(f_init, 1, opts) #self.dnum * [-500]
         es.optimize(self.objective, 50, 50, args = (q_init,))#, 50, 50)
 

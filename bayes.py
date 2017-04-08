@@ -226,10 +226,10 @@ def mp_cma_test(args):
   pools = 1
   kind = 'rbf'
 
-  with CMAES(size, dsize, name='mp_cma_test') as cmaes:
+  with CMAES(size, dsize, width, kind, name='mp_cma_test') as cmaes:
 
     f_trues = []
-    f_trues.append(np.array([[-500, 500, -500, 500, -500, 500]], dtype='float64'))
+    f_trues.append(np.array([-500, 500, -500, 500, -500, 500], dtype='float64'))
     f_trues.append(np.array([[-500, 0, 0, 0, 0, 500]], dtype='float64'))
 
     q_inits = []
@@ -241,13 +241,13 @@ def mp_cma_test(args):
 
     for i in range(pools):
       print(cmaes.objective(f_trues[i], q_inits[i]))
-      show_grid_representation(q_inits[i], (0, 1), (size[0], size[1], 1))
+      #show_grid_representation(q_inits[i], (0, 1), (size[0], size[1], 1))
       qf_hat = qf_hats[i]
       q_hat = qf_hat[0]
       f_hat = qf_hat[1]
-      show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
+      #show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
 
-    waitforbuttonpress()
+    #waitforbuttonpress()
 
 ######################################################################################
 def mp_run(size, dsize, width, kind, q_init):

@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <math.h>
 #include <cstring>
-#include <omp.h>
+//#include <omp.h>
 
 template<class T>
 bool safe_delete(T **obj)
@@ -43,8 +43,6 @@ class rbfBase
       if (num_ < 1)
         return;
 
-      std::cout << "Calling constructor of class " << name_ << std::endl;
-
       size_ = new int[3];
       for (int i = 0; i < 3; i++)
           size_[i] = size[i];
@@ -56,11 +54,13 @@ class rbfBase
       cx_ = new double[num_];
       cy_ = new double[num_];
       cz_ = new double[num_];
+      std::cout << "C++ feature locations :" << std::endl;
       for (int i = 0; i < num_; i++)
       {
         cx_[i] = cx[i];
         cy_[i] = cy[i];
         int z = cz_[i] = cz[i];
+        std::cout << "    " << cx_[i] << ", " << cy_[i] << ", " << cz_[i] << std::endl;
 
         cz_be_en_[z][1] = i;     // last index
         if (cz_be_en_[z][0] > i)
@@ -70,7 +70,7 @@ class rbfBase
       for (int i = 0; i < 3; i++)
       {
         dsize_[i] = dsize[i];
-        //std::cout << cz_be_en_[i][0] << "  " << cz_be_en_[i][1] << " = " << dsize_[i] << std::endl;
+        std::cout << cz_be_en_[i][0] << "  " << cz_be_en_[i][1] << " = " << dsize_[i] << std::endl;
       }
 /*
       #pragma omp parallel for
@@ -129,7 +129,7 @@ class rbfBase
     }
 
 
-  protected:
+  public:
     double *q_;
     int num_;
     int *size_;
@@ -145,15 +145,29 @@ class rbf : public rbfBase
   public:
     rbf(char *name, const int *size, const int *dsize, int num, const double *cx, const double *cy, const double *cz, double sigma) :
       rbfBase(name, size, dsize, num, cx, cy, cz, sigma)
-    {}
+    {
+      std::cout << "rbf: Calling constructor of class " << name_ << std::endl;
+    }
 
     virtual double *evaluate(const double *f)
     {
+
+      for (int z = 0; z < size_[2]; z++)
+        for (int i = cz_be_en_[z][0]; i <= cz_be_en_[z][1]; i++)
+        {
+          int dx = cx_[i]*dsize_[0] - 0.5;
+          int dy = cy_[i]*dsize_[1] - 0.5;
+          int didx = round(dx + dy*dsize_[0] + z*dsize_[0]*dsize_[1]);
+          std::cout << "@" << &(f[didx]) << ": f[" << didx << "] = " << f[didx] << std::endl;
+        }
+      return q_;
+
+
       memset(q_, 0, sizeof(double)*size_[0]*size_[1]*size_[2]);
 
       for (int z = 0; z < size_[2]; z++)
       {
-        #pragma omp parallel for collapse(2)
+        //#pragma omp parallel for collapse(2)
         for (int x = 0; x < size_[0]; x++)
         {
           for (int y = 0; y < size_[1]; y++)
@@ -184,7 +198,9 @@ class nrbf : public rbfBase
   public:
     nrbf(char* name, const int *size, const int *dsize, int num, const double *cx, const double *cy, const double *cz, double sigma) :
       rbfBase(name, size, dsize, num, cx, cy, cz, sigma)
-    {}
+    {
+      std::cout << "nrbf: Calling constructor of class " << name_ << std::endl;
+    }
 
     virtual double *evaluate(const double *f)
     {
@@ -192,7 +208,7 @@ class nrbf : public rbfBase
 
       for (int z = 0; z < size_[2]; z++)
       {
-        #pragma omp parallel for collapse(2)
+        //#pragma omp parallel for collapse(2)
         for (int x = 0; x < size_[0]; x++)
         {
           for (int y = 0; y < size_[1]; y++)
@@ -257,7 +273,11 @@ extern "C"
   }
 */
 
-  double *rbf_evaluate(rbfBase* r, const double *f){ return r->evaluate(f); }
+  double *rbf_evaluate(rbfBase *r, const double *f)
+  {
+    std::cout << "Evaluate:: class " << r  << "; feature " << f << std::endl;
+    return r->evaluate(f);
+  }
 
   void clear(rbfBase* r){ delete r; }
 }
