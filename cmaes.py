@@ -74,6 +74,7 @@ class CMAES(object):
         lrepc.clear(self.obj)
 
     def initial(self, initial_guess):
+        initial_guess = np.reshape(initial_guess, (initial_guess.size,))
         print ("Initial guess shape {}".format(initial_guess.shape))
         f_init = self.dnum * [1]
         for r in itertools.product(self.cx, self.cy, self.cz):
@@ -102,6 +103,7 @@ class CMAES(object):
         return f_init
 
     def evaluate(self, feature):
+        #print(feature)
         #print(feature.base)
         #print(feature.flags)
         feature = np.copy(feature)
@@ -117,8 +119,8 @@ class CMAES(object):
           raise ValueError('CMAES::evaluate Provided data is not contiguous')
 
         output = lrepc.rbf_evaluate(self.obj, cfeature)
-        #print('Evaluate::feature2 {}'.format(feature))
-        # provide a *reference* to a buffer in C library, no copy is done for speed reasons
+          #print('Evaluate::feature2 {}'.format(feature))
+          # provide a *reference* to a buffer in C library, no copy is done for speed reasons
         ArrayType = ctypes.c_double*self.num
         array_pointer = ctypes.cast(output, ctypes.POINTER(ArrayType))
         return np.frombuffer(array_pointer.contents)
@@ -130,15 +132,18 @@ class CMAES(object):
         return cost
 
     def optimize(self, q_target, f_init):
-        #self.q = q
+
+        # convert input arrays
+        q_target = np.reshape(q_target, (q_target.size,))
+        f_init = np.reshape(f_init, (f_init.size,))
 
         opts = cma.CMAOptions()
         opts['verb_log'] = 0
         #opts['tolstagnation'] = 0
         #opts['maxiter'] = 3000
 
-        print('Initial feature {}'.format(f_init))
-        print('Initial feature shape {}'.format(f_init.shape))
+        #print('Initial feature {}'.format(f_init))
+        #print('Initial feature shape {}'.format(f_init.shape))
         es = cma.CMAEvolutionStrategy(f_init, 1, opts) #self.dnum * [-500]
         es.optimize(self.objective, 100, 100, args = (q_target,))#, 50, 50)
 

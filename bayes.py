@@ -222,7 +222,7 @@ def cma_test():
     waitforbuttonpress()
 
 ######################################################################################
-def mp_cma_test(args):
+def mp_cma_test_broken(args):
   size  = (125, 101, 1)
   dsize = (3, 2, 1)
   width = 0.4
@@ -240,7 +240,7 @@ def mp_cma_test(args):
     for i in range(pools):
       q_target_ref = cmaes.evaluate(f_trues[i])
       q_targets.append(np.copy(q_target_ref))
-      q_inits.append(np.empty(q_target_ref.shape))
+      q_inits.append(np.zeros(q_target_ref.shape))
 
     qf_hats = do_multiprocessing_pool(args, q_targets, q_inits, size, dsize, width, kind)
 
@@ -258,6 +258,48 @@ def mp_cma_test(args):
     waitforbuttonpress()
 
 ######################################################################################
+def mp_cma_test(args):
+  size  = (125, 101, 1)
+  num = np.prod(size)
+  dsize = (3, 2, 1)
+  width = 0.4
+  pools = 2
+  kind = 'rbf'
+
+  q_targets = []
+  q_inits = []
+  for i in range(pools):
+    q_target = np.zeros((num,1))
+    for x in range(0, size[0]):
+      for y in range(0, size[1]):
+        cx = size[0]/2.0
+        cy = size[1]/2.0
+        q_target[x+y*size[0]] = (x-cx)*(x-cx) + (y-cy)*(y-cy)
+    q_targets.append(q_target)
+    q_inits.append(np.zeros((num,1)))
+
+  #q_targets = []
+  #q_inits = []
+  #for i in range(pools):
+  #  q_targets.append(np.zeros((num,)))
+  #  q_inits.append(np.ones((num,)))
+
+  qf_hats = do_multiprocessing_pool(args, q_targets, q_inits, size, dsize, width, kind)
+
+  for i in range(pools):
+    #print(cmaes.objective(f_trues[i], q_inits[i]))
+    show_grid_representation(q_inits[i], (0, 1), (size[0], size[1], 1))
+    show_grid_representation(q_targets[i], (0, 1), (size[0], size[1], 1))
+    qf_hat = qf_hats[i]
+    q_hat = qf_hat[0]
+    f_hat = qf_hat[1]
+    show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
+    #q_hat_eval = cmaes.evaluate(f_hat)
+    #show_grid_representation(q_hat_eval, (0, 1), (size[0], size[1], 1))
+
+  waitforbuttonpress()
+
+######################################################################################
 def mp_run(q_targets, q_inits, size, dsize, width, kind, n):
   #print("Starting mp")
   q_target = q_targets[n]
@@ -265,16 +307,16 @@ def mp_run(q_targets, q_inits, size, dsize, width, kind, n):
   th_name = multiprocessing.current_process().name
   with CMAES(size, dsize, width, kind, name = th_name) as cmaes:
     f_init = cmaes.initial(q_init)
-    #print("Starting optimize")
+      #print("Starting optimize")
     f_hat = cmaes.optimize(q_target, f_init)
-    #print("Finishing optimize")
-    #print(f_hat[0])
+      #print("Finishing optimize")
+      #print(f_hat[0])
     q_hat_ref = cmaes.evaluate(f_hat[0])
-    #print("Finishing evaluate")
+      #print("Finishing evaluate")
     q_hat = np.copy(q_hat_ref)
-    #print(f_hat[0], f_hat[1])
-    #print(q_hat)
-    #time.sleep(10)
+      #print(f_hat[0], f_hat[1])
+      #print(q_hat)
+      #time.sleep(10)
     return (q_hat, f_hat[0])
     #return (0, 0)
 

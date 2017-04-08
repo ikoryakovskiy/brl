@@ -38,14 +38,15 @@ class rbfBase
 {
   public:
     rbfBase(char* name, const int *size, const int *dsize, int num, const double *cx, const double *cy, const double *cz, double sigma) :
-      num_(num), sigma_(sigma), name_(name)
+      name_(name), num_(num), cx_(NULL), cy_(NULL), cz_(NULL), sigma_(sigma), q_(NULL)
     {
-      if (num_ < 1)
+
+
+    if (num_ < 1)
         return;
 
-      size_ = new int[3];
       for (int i = 0; i < 3; i++)
-          size_[i] = size[i];
+        size_[i] = size[i];
 
       q_ = new double[size_[0]*size_[1]*size_[2]];
 
@@ -72,11 +73,22 @@ class rbfBase
         dsize_[i] = dsize[i];
         std::cout << cz_be_en_[i][0] << "  " << cz_be_en_[i][1] << " = " << dsize_[i] << std::endl;
       }
+
 /*
+      std::cout << "Enter OpenMP" << std::endl;
+      int n=30000;
+      float a[n];
+      float b[n];
+      float c[n];
       #pragma omp parallel for
-      for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++)
-          std::cout << i << " " << j << " " << omp_get_thread_num() << std::endl;
+      for (int i=0 ; i<n ; i++)
+        for (int j=0 ; j<n ; j++)
+        {
+          a[i]=i;
+          b[j]=j;
+          c[i]=a[i]+b[j];
+        }
+      std::cout << "Exit OpenMP" << std::endl;
 */
     }
 
@@ -125,19 +137,18 @@ class rbfBase
       safe_delete_array(&cx_);
       safe_delete_array(&cy_);
       safe_delete_array(&cz_);
-      safe_delete_array(&size_);
     }
 
 
   protected:
     double *q_;
     int num_;
-    int *size_;
+    int size_[3];
+    int dsize_[3];
     std::string name_;
     double sigma_;
     double *cx_, *cy_, *cz_;
     int cz_be_en_[3][2];
-    int dsize_[3];
 };
 
 class rbf : public rbfBase
