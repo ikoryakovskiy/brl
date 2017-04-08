@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 #import pickle
 import argparse
 from functools import partial
+import time
 
 # local
 from cmaes import CMAES
@@ -222,39 +223,49 @@ def mp_cma_test(args):
   size  = (125, 101, 1)
   dsize = (3, 2, 1)
   width = 0.4
+  pools = 1
   kind = 'rbf'
 
-  cmaes = CMAES(size, dsize)
+  with CMAES(size, dsize, name='mp_cma_test') as cmaes:
 
-  f_trues = []
-  f_trues.append(np.array([[-500, 500, -500, 500, -500, 500]], dtype='float64'))
-  f_trues.append(np.array([[-500, 0, 0, 0, 0, 500]], dtype='float64'))
+    f_trues = []
+    f_trues.append(np.array([[-500, 500, -500, 500, -500, 500]], dtype='float64'))
+    f_trues.append(np.array([[-500, 0, 0, 0, 0, 500]], dtype='float64'))
 
-  q_inits = []
-  for i in range(2):
-    q_inits_ref = cmaes.evaluate(f_trues[i])
-    q_inits.append(np.copy(q_inits_ref))
+    q_inits = []
+    for i in range(pools):
+      q_inits_ref = cmaes.evaluate(f_trues[i])
+      q_inits.append(np.copy(q_inits_ref))
 
-  q_hats = do_multiprocessing_pool(args, q_inits, size, dsize, width, kind)
+    qf_hats = do_multiprocessing_pool(args, q_inits, size, dsize, width, kind)
 
-  for i in range(2):
-    cmaes.q = q_inits[i]
-    print(cmaes.objective(f_trues[i]))
-    show_grid_representation(q_inits[i], (0, 1), (size[0], size[1], 1))
-    show_grid_representation(q_hats[i], (0, 1), (size[0], size[1], 1))
+    for i in range(pools):
+      print(cmaes.objective(f_trues[i], q_inits[i]))
+      show_grid_representation(q_inits[i], (0, 1), (size[0], size[1], 1))
+      qf_hat = qf_hats[i]
+      q_hat = qf_hat[0]
+      f_hat = qf_hat[1]
+      show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
 
-  waitforbuttonpress()
+    waitforbuttonpress()
 
 ######################################################################################
 def mp_run(size, dsize, width, kind, q_init):
-  cmaes = CMAES(size, dsize, width, kind)
-  f_init = cmaes.initial(q_init)
-  f_hat = cmaes.optimize(q_init, f_init)
-  q_hat_ref = cmaes.evaluate(f_hat[0])
-  q_hat = np.copy(q_hat_ref)
-  print(f_hat[0], f_hat[1])
-  print(q_hat)
-  return (q_hat, f_hat[0])
+  print("Starting mp")
+  with CMAES(size, dsize, width, kind, name = multiprocessing.current_process().name) as cmaes:
+    f_init = cmaes.initial(q_init)
+    print("Starting optimize")
+    f_hat = cmaes.optimize(q_init, f_init)
+    print("Finishing optimize")
+    print(f_hat[0])
+    q_hat_ref = cmaes.evaluate(f_hat[0])
+    print("Finishing evaluate")
+    q_hat = np.copy(q_hat_ref)
+    #print(f_hat[0], f_hat[1])
+    #print(q_hat)
+    #time.sleep(10)
+    return (q_hat, f_hat[0])
+    #return (0, 0)
 
 ######################################################################################
 def do_multiprocessing_pool(args, q_inits, size, dsize, width, kind):

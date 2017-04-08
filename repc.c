@@ -1,19 +1,50 @@
 // Created on Tue Mar 28 21:04:37 2017
 //
 // @author: Ivan Koryakovskiy <i.koryakovskiy@gmail.com>
-
+#include <stdlib.h>
 #include <iostream>
 #include <iomanip>
 #include <math.h>
 #include <cstring>
 #include <omp.h>
 
+template<class T>
+bool safe_delete(T **obj)
+{
+    if (*obj)
+    {
+      delete *obj;
+      *obj = NULL;
+      return true;
+    }
+    else
+      return false;
+}
+
+template<class T>
+bool safe_delete_array(T **obj)
+{
+    if (*obj)
+    {
+      delete[] *obj;
+      *obj = NULL;
+      return true;
+    }
+    else
+      return false;
+}
+
 class rbfBase
 {
   public:
-    rbfBase(const int *size, const int *dsize, int num, const double *cx, const double *cy, const double *cz, double sigma) :
-      num_(num), sigma_(sigma)
+    rbfBase(char* name, const int *size, const int *dsize, int num, const double *cx, const double *cy, const double *cz, double sigma) :
+      num_(num), sigma_(sigma), name_(name)
     {
+      if (num_ < 1)
+        return;
+
+      std::cout << "Calling constructor of class " << name_ << std::endl;
+
       size_ = new int[3];
       for (int i = 0; i < 3; i++)
           size_[i] = size[i];
@@ -72,12 +103,37 @@ class rbfBase
       }
       std::cout << q << std::endl;
 */
+    virtual void check_idxs(int idx, int didx)
+    {
+      if ( (idx < 0) || (idx >= size_[0]*size_[1]*size_[2]) )
+      {
+        std::cout << "Invalid index " << idx << "used to access array of size " <<  size_[0]*size_[1]*size_[2] << std::endl;
+        exit(-1);
+      }
+
+      if ( (didx < 0) || (didx >= dsize_[0]*dsize_[1]*dsize_[2]) )
+      {
+        std::cout << "Invalid index " << didx << "used to access array of size " <<  dsize_[0]*dsize_[1]*dsize_[2] << std::endl;
+        exit(-2);
+      }
+    }
+
+    ~rbfBase()
+    {
+      std::cout << "Calling destructor of class " << name_ << std::endl;
+      safe_delete_array(&q_);
+      safe_delete_array(&cx_);
+      safe_delete_array(&cy_);
+      safe_delete_array(&cz_);
+      safe_delete_array(&size_);
+    }
 
 
   protected:
     double *q_;
     int num_;
     int *size_;
+    std::string name_;
     double sigma_;
     double *cx_, *cy_, *cz_;
     int cz_be_en_[3][2];
@@ -87,11 +143,11 @@ class rbfBase
 class rbf : public rbfBase
 {
   public:
-    rbf(const int *size, const int *dsize, int num, const double *cx, const double *cy, const double *cz, double sigma) :
-      rbfBase(size, dsize, num, cx, cy, cz, sigma)
+    rbf(char *name, const int *size, const int *dsize, int num, const double *cx, const double *cy, const double *cz, double sigma) :
+      rbfBase(name, size, dsize, num, cx, cy, cz, sigma)
     {}
 
-    double *evaluate(const double *f)
+    virtual double *evaluate(const double *f)
     {
       memset(q_, 0, sizeof(double)*size_[0]*size_[1]*size_[2]);
 
@@ -111,8 +167,9 @@ class rbf : public rbfBase
               double dist2 = pow(xx - cx_[i], 2) + pow(yy - cy_[i], 2);
               int dx = cx_[i]*dsize_[0] - 0.5;
               int dy = cy_[i]*dsize_[1] - 0.5;
-              int f_idx = round(dx + dy*dsize_[0] + z*dsize_[0]*dsize_[1]);
-              q_[idx] += f[f_idx] * exp(- dist2 / (sigma_*sigma_));
+              int didx = round(dx + dy*dsize_[0] + z*dsize_[0]*dsize_[1]);
+              check_idxs(idx, didx);
+              q_[idx] += f[didx] * exp(- dist2 / (sigma_*sigma_));
             }
             //std::cout << q_[idx] << std::endl;
           }
@@ -125,11 +182,11 @@ class rbf : public rbfBase
 class nrbf : public rbfBase
 {
   public:
-    nrbf(const int *size, const int *dsize, int num, const double *cx, const double *cy, const double *cz, double sigma) :
-      rbfBase(size, dsize, num, cx, cy, cz, sigma)
+    nrbf(char* name, const int *size, const int *dsize, int num, const double *cx, const double *cy, const double *cz, double sigma) :
+      rbfBase(name, size, dsize, num, cx, cy, cz, sigma)
     {}
 
-    double *evaluate(const double *f)
+    virtual double *evaluate(const double *f)
     {
       memset(q_, 0, sizeof(double)*size_[0]*size_[1]*size_[2]);
 
@@ -150,9 +207,10 @@ class nrbf : public rbfBase
               double dist2 = pow(xx - cx_[i], 2) + pow(yy - cy_[i], 2);
               int dx = cx_[i]*dsize_[0] - 0.5;
               int dy = cy_[i]*dsize_[1] - 0.5;
-              int f_idx = round(dx + dy*dsize_[0] + z*dsize_[0]*dsize_[1]);
+              int didx = round(dx + dy*dsize_[0] + z*dsize_[0]*dsize_[1]);
+              check_idxs(idx, didx);
               double weight = exp(- dist2 / (sigma_*sigma_));
-              q_[idx] += f[f_idx] * weight;
+              q_[idx] += f[didx] * weight;
               sum += weight;
             }
             q_[idx] /= sum;
@@ -163,23 +221,43 @@ class nrbf : public rbfBase
       return q_;
     }
 };
+/*
+class tst : public rbfBase
+{
+  public:
+    tst() :
+      rbfBase(NULL, NULL, 0, NULL, NULL, NULL, 0)
+    {}
 
-
+    virtual double *evaluate(const double *f)
+    {
+      return NULL;
+    }
+};
+*/
 extern "C"
 {
   // Classical RBF
-  rbf* rbf_new(const int *size, const int *dsize, int num,
+  rbf* rbf_new(char* name, const int *size, const int *dsize, int num,
                 const double *cx, const double *cy, const double *cz, double sigma)
   {
-    return new rbf(size, dsize, num, cx, cy, cz, sigma);
+    return new rbf(name, size, dsize, num, cx, cy, cz, sigma);
   }
 
   // Normalized RBF
-  nrbf* nrbf_new(const int *size, const int *dsize, int num,
+  nrbf* nrbf_new(char* name, const int *size, const int *dsize, int num,
                 const double *cx, const double *cy, const double *cz, double sigma)
   {
-    return new nrbf(size, dsize, num, cx, cy, cz, sigma);
+    return new nrbf(name, size, dsize, num, cx, cy, cz, sigma);
   }
+/*
+  tst* tst_new()
+  {
+    return new tst();
+  }
+*/
 
   double *rbf_evaluate(rbfBase* r, const double *f){ return r->evaluate(f); }
+
+  void clear(rbfBase* r){ delete r; }
 }

@@ -16,7 +16,7 @@ class CMAES(object):
     dnum = 0
     num = 0
 
-    def __init__(self, size, dsize, width = 0.4, kind = 'rbf'):
+    def __init__(self, size, dsize, width = 0.4, kind = 'rbf', name = 'default'):
         if (size[2] != dsize[2]):
           raise ValueError('CMAES::init Dimensions are not correct')
 
@@ -48,22 +48,33 @@ class CMAES(object):
         locz = np.asarray(locz, dtype='float64')
 
         sigma = width * np.maximum(1.0/np.power(2*dsize[0], 0.5), 1.0/np.power(2*dsize[1], 0.5))
-        print(sigma)
+        print("Selected sigma {}".format(sigma))
 
         #print (locz)
+        #cmane = (ctypes.c_char_p)
         csize = (ctypes.c_int * len(size))(*size)
-        cdsize = (ctypes.c_int * len(size))(*dsize)
+        cdsize = (ctypes.c_int * len(dsize))(*dsize)
+        #for i in range(0, len(size)): print csize[i]
+        #for i in range(0, len(dsize)): print cdsize[i]
         clocx = locx.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         clocy = locy.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         clocz = locz.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         #print (np.ctypeslib.as_array((ctypes.c_double * dnum).from_address(ctypes.addressof(clocz.contents))))
 
+        #self.obj = lrepc.tst_new()
         if kind == 'rbf':
-          self.obj = lrepc.rbf_new(csize, cdsize, ctypes.c_int(self.dnum), clocx, clocy, clocz, ctypes.c_double(sigma))
+          self.obj = lrepc.rbf_new(ctypes.c_char_p(name), csize, cdsize, ctypes.c_int(self.dnum), clocx, clocy, clocz, ctypes.c_double(sigma))
         else:
-          self.obj = lrepc.nrbf_new(csize, cdsize, ctypes.c_int(self.dnum), clocx, clocy, clocz, ctypes.c_double(sigma))
+          self.obj = lrepc.nrbf_new(ctypes.c_char_p(name), csize, cdsize, ctypes.c_int(self.dnum), clocx, clocy, clocz, ctypes.c_double(sigma))
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        lrepc.clear(self.obj)
 
     def initial(self, initial_guess):
+        print ("Initial guess shape {}".format(initial_guess.shape))
         f_init = self.dnum * [1]
         for r in itertools.product(self.cx, self.cy, self.cz):
           #print (r)
@@ -77,8 +88,8 @@ class CMAES(object):
           guess = 0
           for dd in itertools.product(idx_ii, idx_jj):
             idx = int(dd[0] + dd[1]*self.size[0] + idx_k*self.size[0]*self.size[1])
+            #print(dd[0], dd[1], idx_k, idx)
             guess += initial_guess[idx]
-            #print (idx)
           guess = guess / ( (2*click_size+1)**2 )
 
           f_idx_i = int(np.round(r[0]*(self.dsize[0]-1)))
@@ -90,13 +101,14 @@ class CMAES(object):
         return f_init
 
     def evaluate(self, feature):
-        cfeature = feature.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-        output = lrepc.rbf_evaluate(self.obj, cfeature)
+        #cfeature = feature.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+        #output = lrepc.rbf_evaluate(self.obj, cfeature)
 
         # provide a *reference* to a buffer in C library, no copy is done for speed reasons
-        ArrayType = ctypes.c_double*self.num
-        array_pointer = ctypes.cast(output, ctypes.POINTER(ArrayType))
-        return np.frombuffer(array_pointer.contents)
+        #ArrayType = ctypes.c_double*self.num
+        #array_pointer = ctypes.cast(output, ctypes.POINTER(ArrayType))
+        #return np.frombuffer(array_pointer.contents)
+        return np.zeros([self.num,])
 
     def objective(self, x, *q_target):
         q_hat = self.evaluate(x)
@@ -111,20 +123,21 @@ class CMAES(object):
         #opts['tolstagnation'] = 0
         #opts['maxiter'] = 3000
 
+        print(f_init)
         es = cma.CMAEvolutionStrategy(f_init, 1, opts) #self.dnum * [-500]
-        es.optimize(self.objective, 3000, 3000, args = (q_init,))#, 50, 50)
+        es.optimize(self.objective, 50, 50, args = (q_init,))#, 50, 50)
 
-        print("\n\n")
-        print('termination by', es.stop())
+        #print("\n\n")
+        #print('termination by', es.stop())
         res = es.result()
 
-        q_hat_ref = self.evaluate(res[0])
-        print(res[0])
-        print(q_hat_ref)
-        fc = self.objective(res[0], q_init)
-        rc = np.linalg.norm(q_hat_ref - q_init) + 1*np.linalg.norm(res[0])
-        print("Feature cost {}, representation cost {}".format(fc, rc))
-        print("\n\n")
+        #q_hat_ref = self.evaluate(res[0])
+        #print(res[0])
+        #print(q_hat_ref)
+        #fc = self.objective(res[0], q_init)
+        #rc = np.linalg.norm(q_hat_ref - q_init) + 1*np.linalg.norm(res[0])
+        #print("Feature cost {}, representation cost {}".format(fc, rc))
+        #print("\n\n")
 
         es.stop()
         return res
