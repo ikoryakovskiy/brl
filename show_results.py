@@ -25,23 +25,23 @@ def main():
   dsize = (3, 3, 3)
   offset = size[0]*size[1]
 
-  cmaes = CMAES(size, dsize, width = 0.4, kind = 'rbf')
+  with CMAES(size, dsize, width = 0.4, kind = 'nrbf') as cmaes:
 
-  #q0 = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat")
-  #f0 = np.fromfile("policies/f_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat")
-  #q0 = load_grid_representation("q_rbf_test.dat")
-  #f0 = np.fromfile("f_rbf_test.dat")
-  q0 = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
-  f0 = np.fromfile("policies/f_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
+    #q0 = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat")
+    #f0 = np.fromfile("policies/f_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat")
+    #q0 = load_grid_representation("q_rbf_test.dat")
+    #f0 = np.fromfile("f_rbf_test.dat")
+    q0 = load_grid_representation("policies/q_testing.dat")
+    f0 = np.fromfile("policies/f_testing.dat")
 
-  q0_ref = cmaes.evaluate(f0)
+    q0_ref = cmaes.evaluate(f0)
 
-  csv_data = csv_read(["trajectories/pendulum_sarsa_grid_play-test-0.csv"])
-  tr = load_trajectories(csv_data)
+    csv_data = csv_read(["trajectories/pendulum_sarsa_grid_play-test-0.csv"])
+    tr = load_trajectories(csv_data)
 
 
-  see_by_layers(q0, tr, offset)
-  see_by_layers(q0_ref, tr, offset)
+    see_by_layers(q0, tr, offset)
+    see_by_layers(q0_ref, tr, offset)
 
   return
 

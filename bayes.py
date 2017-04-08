@@ -46,8 +46,8 @@ def main():
   ##############################################
   #rbf_test()
   #cma_test()
-  mp_cma_test(args)
-  return
+  #mp_cma_test(args)
+  #return
   ##############################################
 
   # Import data
@@ -71,11 +71,14 @@ def main():
   ##############################################
 
   # Learning representation
-  Q_init = tm
+  width = 0.4
+  kind = 'nrbf'
+  Q_target = tm
+  Q_init = np.zeros(Q_target.size)
 
-  Q_hat, F_hat = mp_cma_run(args, Q_init, size, dsize, width = 0.4, kind = 'rbf')
+  Q_hat, F_hat = mp_cma_run(args, Q_target, Q_init, size, dsize, width, kind)
 
-  fname = "cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat"
+  fname = "testing.dat"
   Q_hat.tofile("policies/q_{}".format(fname))
   F_hat.tofile("policies/f_{}".format(fname))
 
@@ -83,17 +86,18 @@ def main():
 
   mp_size = (size[0], size[1], 1)
   mp_dsize = (dsize[0], dsize[1], 1)
-  cmaes = CMAES(mp_size, mp_dsize, width = 0.4, kind = 'rbf')
-  for i in range(0, 3):
-    #show_grid_representation(Q_init[offset*i:offset*(i+1)], (0, 1), (125, 101, 1))
-    show_grid_representation(Q_hat[offset*i:offset*(i+1)], (0, 1), (125, 101, 1))
-    q_hat_ff = cmaes.evaluate(F_hat[doffset*i:doffset*(i+1)])
-    q_init = Q_init[offset*i:offset*(i+1)]
+  with CMAES(mp_size, mp_dsize, width, kind, name = 'plotting') as cmaes:
+    for i in range(0, 1):
+      #show_grid_representation(Q_init[offset*i:offset*(i+1)], (0, 1), (125, 101, 1))
+      q_init = Q_init[offset*i:offset*(i+1)]
+      show_grid_representation(q_init, (0, 1), (125, 101, 1))
+      q_target = Q_target[offset*i:offset*(i+1)]
+      show_grid_representation(q_target, (0, 1), (125, 101, 1))
+      show_grid_representation(Q_hat[offset*i:offset*(i+1)], (0, 1), (125, 101, 1))
+      q_hat_ff = cmaes.evaluate(F_hat[doffset*i:doffset*(i+1)])
+      show_grid_representation(q_hat_ff, (0, 1), (125, 101, 1))
 
-    show_grid_representation(q_hat_ff, (0, 1), (125, 101, 1))
-
-
-  waitforbuttonpress()
+    waitforbuttonpress()
 
   return
 
@@ -141,7 +145,7 @@ def main():
   #  plt.waitforbuttonpress()
 
 ######################################################################################
-def mp_cma_run(args, Q_init, size, dsize, width = 0.4, kind = 'rbf'):
+def mp_cma_run(args, Q_target, Q_init, size, dsize, width = 0.4, kind = 'rbf'):
   if (size[2] != dsize[2]):
     raise ValueError('CMAES::init Dimensions are not correct')
 
@@ -150,13 +154,15 @@ def mp_cma_run(args, Q_init, size, dsize, width = 0.4, kind = 'rbf'):
   offset = size[0]*size[1]
   actions = size[2]
 
+  q_targets = []
   q_inits = []
   for i in range(actions):
+    q_targets.append(Q_target[offset*i:offset*(i+1)])
     q_inits.append(Q_init[offset*i:offset*(i+1)])
 
   mp_size = (size[0], size[1], 1)
   mp_dsize = (dsize[0], dsize[1], 1)
-  res = do_multiprocessing_pool(args, q_inits, mp_size, mp_dsize, width, kind)
+  res = do_multiprocessing_pool(args, q_targets, q_inits, mp_size, mp_dsize, width, kind)
 
   Q_hat = np.empty(Q_init.shape)
   F_hat = np.empty(dnum, )
@@ -274,7 +280,7 @@ def mp_cma_test(args):
       for y in range(0, size[1]):
         cx = size[0]/2.0
         cy = size[1]/2.0
-        q_target[x+y*size[0]] = (x-cx)*(x-cx) + (y-cy)*(y-cy)
+        q_target[x+y*size[0]] = 6000-(x-cx)*(x-cx) + (y-cy)*(y-cy)
     q_targets.append(q_target)
     q_inits.append(np.zeros((num,1)))
 
