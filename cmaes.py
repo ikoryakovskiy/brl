@@ -140,7 +140,7 @@ class CMAES(object):
         print('Initial feature {}'.format(f_init))
         print('Initial feature shape {}'.format(f_init.shape))
         es = cma.CMAEvolutionStrategy(f_init, 1, opts) #self.dnum * [-500]
-        es.optimize(self.objective, args = (q_target,))#, 50, 50)
+        es.optimize(self.objective, 100, 100, args = (q_target,))#, 50, 50)
 
         #print("\n\n")
         #print('termination by', es.stop())

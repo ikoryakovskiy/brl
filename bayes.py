@@ -191,39 +191,42 @@ def rbf_test():
 def cma_test():
   size  = (125, 101, 1)
   dsize = (3, 2, 1)
+  width = 0.4
+  kind = 'rbf'
 
-  cmaes = CMAES(size, dsize)
+  f_true = np.array([0, 500, 0, 0, 0, -500], dtype='float64')
 
-  f_true = np.array([[0, 500, 0, 0, 0, -500]], dtype='float64')
-  q_init_ref = cmaes.evaluate(f_true)
-  q_init = np.empty(q_init_ref.shape)
-  np.copyto(q_init, q_init_ref)
+  with CMAES(size, dsize, width, kind, name='cma_test') as cmaes:
+    q_target_ref = cmaes.evaluate(f_true)
+    q_target = np.copy(q_target_ref)
+    #f_init = cmaes.initial(q_init)
+    f_init = np.zeros(f_true.shape)
+    q_init_ref = cmaes.evaluate(f_init)
+    q_init = np.copy(q_init_ref)
+    #print(f_init)
+    f_hat = cmaes.optimize(q_target, f_init)
+    q_hat = cmaes.evaluate(f_hat[0])
+    #print(f_hat[0], f_hat[1])
 
-  cmaes = CMAES(size, dsize)
-  f_init = cmaes.initial(q_init)
-  print(f_init)
-  f_hat = cmaes.optimize(q_init, f_init)
-  q_hat = cmaes.evaluate(f_hat[0])
-  print(f_hat[0], f_hat[1])
+    #z_hat = cmaes.evaluate(f_hat[0])
+    #cost = np.linalg.norm(z_hat - q_init) + 1*np.linalg.norm(f_hat[0])
+    #print (cost)
 
-  #z_hat = cmaes.evaluate(f_hat[0])
-  #cost = np.linalg.norm(z_hat - q_init) + 1*np.linalg.norm(f_hat[0])
-  #print (cost)
+    print(np.linalg.norm(q_hat - q_target) + 1*np.linalg.norm(f_hat[0]))
+    print(cmaes.objective(f_hat[0], q_target))
 
-  print(np.linalg.norm(q_hat - q_init) + 1*np.linalg.norm(f_hat[0]))
-  print(cmaes.objective(f_hat[0], q_init))
+    show_grid_representation(q_init, (0, 1), (size[0], size[1], 1))
+    show_grid_representation(q_target, (0, 1), (size[0], size[1], 1))
+    show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
 
-  show_grid_representation(q_init, (0, 1), (size[0], size[1], 1))
-  show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
-
-  waitforbuttonpress()
+    waitforbuttonpress()
 
 ######################################################################################
 def mp_cma_test(args):
   size  = (125, 101, 1)
   dsize = (3, 2, 1)
   width = 0.4
-  pools = 2
+  pools = 1
   kind = 'rbf'
 
   with CMAES(size, dsize, width, kind, name='mp_cma_test') as cmaes:

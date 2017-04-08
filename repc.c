@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <math.h>
 #include <cstring>
-//#include <omp.h>
+#include <omp.h>
 
 template<class T>
 bool safe_delete(T **obj)
@@ -129,7 +129,7 @@ class rbfBase
     }
 
 
-  public:
+  protected:
     double *q_;
     int num_;
     int *size_;
@@ -162,12 +162,19 @@ class rbf : public rbfBase
         }
       return q_;
 */
-
+/*
+      #pragma omp parallel for
+      for (int i = 0; i < 10; i++)
+        std::cout << i << std::endl;
+      return q_;
+*/
       memset(q_, 0, sizeof(double)*size_[0]*size_[1]*size_[2]);
+
+      //std::cout << "Size " << size_[0]*size_[1]*size_[2] << std::endl;
 
       for (int z = 0; z < size_[2]; z++)
       {
-        //#pragma omp parallel for collapse(2)
+        #pragma omp parallel for collapse(2)
         for (int x = 0; x < size_[0]; x++)
         {
           for (int y = 0; y < size_[1]; y++)
