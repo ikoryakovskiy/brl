@@ -23,9 +23,25 @@ def show_grid_representation(data, field_dims, layout):
         norm *= layout[squash[k]]
       m[i][j] = s / norm
 
+  fig = plt.figure()
+  ax = fig.add_subplot(111)
+
   m = np.transpose(m)
-  cax = plt.matshow(m, origin='lower')
-  plt.colorbar(cax)
+  cax = ax.matshow(m, origin='lower')
+  fig.colorbar(cax)
+
+  numrows, numcols = m.shape
+  def format_coord(x, y):
+      col = int(x+0.5)
+      row = int(y+0.5)
+      if col>=0 and col<numcols and row>=0 and row<numrows:
+          z = m[row,col]
+          return 'x=%1.4f, y=%1.4f, z=%1.4f'%(x, y, z)
+      else:
+          return 'x=%1.4f, y=%1.4f'%(x, y)
+
+  ax.format_coord = format_coord
+  plt.show()
 
 ######################################################################################
 def waitforbuttonpress():

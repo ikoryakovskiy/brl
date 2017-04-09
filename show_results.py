@@ -21,52 +21,80 @@ from py.my_rl.gridworld import *
 from py.my_csv.utils import *
 
 def main():
+
+  ######################################################################################
+  test_compare_qf("cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf2-test-_experiment_agent_policy_representation.dat")
+  return
+  ######################################################################################
+  #diffq("cfg_pendulum_sarsa_grid-it0-mp0-run0-nrbf-test-_experiment_agent_policy_representation.dat",
+  #      "cfg_pendulum_sarsa_grid-it0-mp0-run0-nrbf2-test-_experiment_agent_policy_representation.dat")
+
+  q = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
+  q_mean = import_data()
+  err = rmse(q, q_mean)
+
+  print("RMSE = {}".format(err))
+
+######################################################################################
+
+def rmse(predictions, targets):
+  return np.sqrt(((predictions - targets) ** 2).mean())
+
+######################################################################################
+def test_compare_qf(fname):
   size  = (125, 101, 3)
   dsize = (10, 10, 3)
   offset = size[0]*size[1]
-
   with CMAES(size, dsize, width = 0.4, kind = 'rbf') as cmaes:
-
-    #q0 = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat")
-    #f0 = np.fromfile("policies/f_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-_experiment_agent_policy_representation.dat")
-    #q0 = load_grid_representation("q_rbf_test.dat")
-    #f0 = np.fromfile("f_rbf_test.dat")
-    q0 = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
-    f0 = np.fromfile("policies/f_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
+    q0 = load_grid_representation("policies/q_{}".format(fname))
+    f0 = np.fromfile("policies/f_{}".format(fname))
 
     q0_ref = cmaes.evaluate(f0)
 
-    csv_data = csv_read(["trajectories/pendulum_sarsa_grid_play-test-0.csv"])
+    csv_data = csv_read(["trajectories/pendulum_sarsa_grid_rand_play-test-0.csv"])
     tr = load_trajectories(csv_data)
 
+    see_by_layers(q0, tr, offset)
+    see_by_layers(q0_ref, tr, offset)
 
     p0 = calc_grid_policy(q0, (0, 1), (125, 101, 3))
     show_grid_representation(p0, (0, 1), (125, 101, 1))
     plt.scatter(tr[:,0], tr[:,1], c='w', s=40, marker='+')
     plt.waitforbuttonpress()
 
-    #see_by_layers(q0, tr, offset)
-    #see_by_layers(q0_ref, tr, offset)
+######################################################################################
+def diffq(fname0, fname1):
+  size  = (125, 101, 3)
+  dsize = (10, 10, 3)
+  offset = size[0]*size[1]
 
-  return
+  q0 = load_grid_representation("policies/q_{}".format(fname0))
+  q1 = load_grid_representation("policies/q_{}".format(fname1))
+
+  csv_data = csv_read(["trajectories/pendulum_sarsa_grid_play-test-0.csv"])
+  tr = load_trajectories(csv_data)
+
+  see_by_layers(q0-q1, tr, offset)
 
   p0 = calc_grid_policy(q0, (0, 1), (125, 101, 3))
-  show_grid_representation(p0, (0, 1), (125, 101, 1))
-  plt.scatter(tr[:,0], tr[:,1], c='w', s=40, marker='+')
-  plt.waitforbuttonpress()
-
   p1 = calc_grid_policy(q1, (0, 1), (125, 101, 3))
-  show_grid_representation(p1, (0, 1), (125, 101, 1))
+  show_grid_representation(p0-p1, (0, 1), (125, 101, 1))
   plt.scatter(tr[:,0], tr[:,1], c='w', s=40, marker='+')
   plt.waitforbuttonpress()
 
-  dp = p0-p1
-  show_grid_representation(dp, (0, 1), (125, 101, 1))
-  plt.scatter(tr[:,0], tr[:,1], c='w', s=40, marker='+')
-  plt.waitforbuttonpress()
+def import_data():
+  n = 50
+  size  = (125, 101, 3)
+  num = np.prod(size)
+
+  train = np.zeros((n, num))
+  for i in range(0, n):
+    train[i] = load_grid_representation(
+      "data/cfg_pendulum_sarsa_grid-{:03d}-mp0-run0-_experiment_agent_policy_representation.dat".format(i))
+
+  return train.mean(0)
 
 ######################################################################################
-
 def see_by_layers(q, tr, offset):
   for i in range(0, 3):
     show_grid_representation(q[offset*i:offset*(i+1)], (0, 1), (125, 101, 1))
