@@ -29,9 +29,9 @@ def main():
   #diffq("cfg_pendulum_sarsa_grid-it0-mp0-run0-nrbf-test-_experiment_agent_policy_representation.dat",
   #      "cfg_pendulum_sarsa_grid-it0-mp0-run0-nrbf2-test-_experiment_agent_policy_representation.dat")
 
-  q = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
-  q_mean = import_data()
-  err = rmse(q, q_mean)
+  Q = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
+  Q_mean = import_data()[0]
+  err = rmse(Q, Q_mean)
 
   print("RMSE = {}".format(err))
 
@@ -81,18 +81,6 @@ def diffq(fname0, fname1):
   show_grid_representation(p0-p1, (0, 1), (125, 101, 1))
   plt.scatter(tr[:,0], tr[:,1], c='w', s=40, marker='+')
   plt.waitforbuttonpress()
-
-def import_data():
-  n = 50
-  size  = (125, 101, 3)
-  num = np.prod(size)
-
-  train = np.zeros((n, num))
-  for i in range(0, n):
-    train[i] = load_grid_representation(
-      "data/cfg_pendulum_sarsa_grid-{:03d}-mp0-run0-_experiment_agent_policy_representation.dat".format(i))
-
-  return train.mean(0)
 
 ######################################################################################
 def see_by_layers(q, tr, offset):

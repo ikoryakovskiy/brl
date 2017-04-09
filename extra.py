@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 import math
+from py.my_file.io import *
 
 def load_trajectories(data):
 #  print (data.shape)
@@ -59,14 +60,29 @@ def real_targets(tm, tr, gamma):
     value = tm[int(x0 + dim[0]*xd0 + np.prod(dim)*u0)]
     print(value, " -> ", target)
     tg = np.vstack((tg, [x0, xd0, u0, target]))
-    break
   return tg
 
 def ijk2idx(dim, i, j, k):
     return i + dim[0]*j + dim[0]*dim[1]*k
-    
+
 def idx2ijk(dim, li):
     k = li // (dim[0]*dim[1])
     j = (li % (dim[0]*dim[1])) // dim[0]
     i = (li % (dim[0]*dim[1])) %  dim[0]
     return (i, j, k)
+
+def import_data(n = 50, save_mean = 0):
+  size  = (125, 101, 3)
+  num = np.prod(size)
+
+  data = np.zeros((n, num))
+  for i in range(0, n):
+    data[i] = load_grid_representation("data/cfg_pendulum_sarsa_grid-{:03d}-mp0-run0-_experiment_agent_policy_representation.dat".format(i))
+
+  data_mean = data.mean(0)
+  data_std = data.std(0)
+  #tv2 = 2*np.maximum( num * [0.0001], data.var(0))
+
+  if save_mean:
+    save_grid_representation(data_mean, "policies/cfg_pendulum_sarsa_grid-init-mp0-run0-_experiment_agent_policy_representation.dat")
+  return (data_mean, data_std)

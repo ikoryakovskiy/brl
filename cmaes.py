@@ -15,6 +15,7 @@ lrepc = cdll.LoadLibrary('./librepc.so')
 class CMAES(object):
   dnum = 0
   num = 0
+  tr_target = None
 
   def __init__(self, size, dsize, width = 0.4, kind = 'rbf', name = 'default'):
     if (size[2] != dsize[2]):
@@ -110,16 +111,46 @@ class CMAES(object):
     array_pointer = ctypes.cast(output, ctypes.POINTER(ArrayType))
     return np.frombuffer(array_pointer.contents)
 
-  def objective(self, x, *q_target):
-    q_hat = self.evaluate(x)
-    cost = np.linalg.norm(q_hat - q_target[0]) + 1*np.linalg.norm(x)
+  def objective(self, f_hat, *args):
+    q_current = args[0]
+
+    # likelihood
+    q_hat = self.evaluate(f_hat)
+    likelihood = np.linalg.norm(q_hat - q_current)
+
+    # prior
+    prior = np.linalg.norm(f_hat)
+
+    # conditional
+    conditional = self.calc_conditional(q_hat)
+
+    cost = likelihood + 1.0*prior + conditional
     return cost
 
-  def optimize(self, q_target, f_init):
+  def calc_conditional(self, q_hat):
+    cond = 0
+    if self.tr_target is not None:
+      for t_idx in range(0, self.tr_target.shape[0]):
+        ti, tj, tk, tq = self.tr_target[t_idx, :]
+        q_diff = np.abs(q_hat - tq)
+        for i in range(0, self.size[0]):
+          for j in range(0, self.size[1]):
+            idx = i + j * self.size[0]
+            v = self.f_contitional(q_diff[idx], i-ti, j-tj)
+            cond += v
+            #if v > 1:
+            #    print(self.state[idx], tq, i-ti, j-tj, v)
+    return cond
+
+  def f_contitional(self, dq, di, dj):
+    return dq * np.exp(-(di*di+dj*dj)/10.0)
+
+  def optimize(self, q_current, f_init, tr_target):
 
     # re-convert input arrays
-    q_target = np.reshape(q_target, (q_target.size,))
+    q_current = np.reshape(q_current, (q_current.size,))
     f_init = np.reshape(f_init, (f_init.size,))
+    self.tr_target = tr_target
 
     # settings
     opts = cma.CMAOptions()
@@ -127,7 +158,7 @@ class CMAES(object):
 
     # actual run with
     es = cma.CMAEvolutionStrategy(f_init, 1, opts)
-    es.optimize(self.objective, args = (q_target,))#, 3, 3)
+    es.optimize(self.objective, args = (q_current,))#, 3, 3)
 
     # finalize
     res = es.result()
