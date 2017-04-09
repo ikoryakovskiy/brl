@@ -122,12 +122,12 @@ class CMAES(object):
     prior = np.linalg.norm(f_hat)
 
     # conditional
-    conditional = self.calc_conditional(q_hat)
+    conditional = self.calc_conditional(q_hat, 10.0)
 
-    cost = likelihood + 1.0*prior + conditional
+    cost = 0*likelihood + 1.0*prior + conditional
     return cost
 
-  def calc_conditional(self, q_hat):
+  def calc_conditional(self, q_hat, sigma2):
     cond = 0
     if self.tr_target is not None:
       for t_idx in range(0, self.tr_target.shape[0]):
@@ -136,14 +136,13 @@ class CMAES(object):
         for i in range(0, self.size[0]):
           for j in range(0, self.size[1]):
             idx = i + j * self.size[0]
-            v = self.f_contitional(q_diff[idx], i-ti, j-tj)
+            di = i-ti
+            dj = j-tj
+            v = q_diff[idx] * np.exp(-(di*di+dj*dj)/sigma2)
             cond += v
             #if v > 1:
             #    print(self.state[idx], tq, i-ti, j-tj, v)
     return cond
-
-  def f_contitional(self, dq, di, dj):
-    return dq * np.exp(-(di*di+dj*dj)/10.0)
 
   def optimize(self, q_current, f_init, tr_target):
 
@@ -158,7 +157,7 @@ class CMAES(object):
 
     # actual run with
     es = cma.CMAEvolutionStrategy(f_init, 1, opts)
-    es.optimize(self.objective, args = (q_current,))#, 3, 3)
+    es.optimize(self.objective, args = (q_current,)) # , 3, 3
 
     # finalize
     res = es.result()

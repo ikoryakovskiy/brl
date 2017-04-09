@@ -46,10 +46,9 @@ def main(args):
   else:
     fname = args.output_file
 
-  Q_mean = import_data()[0]
-  learn_representation(args, Q_mean, fname = fname)
+  #Q_mean = import_data()[0]
+  #learn_representation(args, Q_mean, fname = fname)
 
-def aaa():
   Q_current = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
   TR_targets = prepare_targets(Q_current, "pendulum_sarsa_grid_rand_play-test-0.csv", 0.97)
 
@@ -67,6 +66,8 @@ def prepare_targets(Q, fname, gamma):
 def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.dat"):
   size  = (125, 101, 3)
   dsize = (3, 3, 3)
+  offset = size[0]*size[1]
+  doffset = dsize[0]*dsize[1]
   width = 0.4
   if args.rbf:
     kind = 'rbf'
