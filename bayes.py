@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 Created on Tue Mar 28 21:04:37 2017
 
@@ -36,9 +35,9 @@ def main(args):
 
   ##############################################
   #rbf_test()
-  #cma_test()
+  cma_test()
   #mp_cma_test(args)
-  #return
+  return
   ##############################################
 
   if args.output_file is None:
@@ -140,20 +139,20 @@ def rbf_test():
   dnum = np.prod(dsize)
   offset = size[0]*size[1]
 
-  cmaes = CMAES(size, dsize, width = 0.4, kind = 'rbf')
+  with CMAES(size, dsize, width = 0.4, kind = 'rbf') as cmaes:
 
-  #f_init = 500*np.random.uniform(-1, 1, size=(1, dnum))
-  f_init = np.ones([1, dnum]) * 0
-  f_init[0, 0] = -500
-  #f_init[0, 1] = 500
-  q_init_ref = cmaes.evaluate(f_init)
-  for i in range(3):
-    show_grid_representation(q_init_ref[offset*i:offset*(i+1)], (0, 1), (size[0], size[1], 1))
+    #f_init = 500*np.random.uniform(-1, 1, size=(1, dnum))
+    f_init = np.ones([dnum,]) * 0
+    f_init[0,] = -500
+    f_init[1,] = 500
+    q_init_ref = cmaes.evaluate(f_init)
+    for i in range(1):
+      show_grid_representation(q_init_ref[offset*i:offset*(i+1)], (0, 1), (size[0], size[1], 1))
 
-  q_init_ref.tofile("q_rbf_test.dat")
-  f_init.tofile("f_rbf_test.dat")
+    #q_init_ref.tofile("q_rbf_test.dat")
+    #f_init.tofile("f_rbf_test.dat")
 
-  waitforbuttonpress()
+    waitforbuttonpress()
 
 ######################################################################################
 def cma_test():
@@ -165,21 +164,26 @@ def cma_test():
   f_true = np.array([0, 500, 0, 0, 0, -500], dtype='float64')
 
   with CMAES(size, dsize, width, kind, name='cma_test') as cmaes:
-    Q_current_ref = cmaes.evaluate(f_true)
-    Q_current = np.copy(Q_current_ref)
+    q_current_ref = cmaes.evaluate(f_true)
+    q_current = np.copy(q_current_ref)
+
+    Q_current = np.tile(q_current, 3)
+    TR_targets = prepare_targets(Q_current, "pendulum_sarsa_grid_rand_play-test-0.csv", 0.97)
+    tr_idxs = np.nonzero(TR_targets[:, 2] == 0)[0]
+    tr_target = TR_targets[tr_idxs, :]
 
     f_init = np.zeros(f_true.shape)
     q_init_ref = cmaes.evaluate(f_init)
     q_init = np.copy(q_init_ref)
 
-    f_hat = cmaes.optimize(Q_current, f_init)
+    f_hat = cmaes.optimize(q_current, f_init, tr_target)
     q_hat = cmaes.evaluate(f_hat[0])
 
-    print(np.linalg.norm(q_hat - Q_current) + 1*np.linalg.norm(f_hat[0]))
-    print(cmaes.objective(f_hat[0], Q_current))
+    print(np.linalg.norm(q_hat - q_current) + 1*np.linalg.norm(f_hat[0]))
+    print(cmaes.objective(f_hat[0], q_current))
 
     show_grid_representation(q_init, (0, 1), (size[0], size[1], 1))
-    show_grid_representation(Q_current, (0, 1), (size[0], size[1], 1))
+    show_grid_representation(q_current, (0, 1), (size[0], size[1], 1))
     show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
 
     waitforbuttonpress()

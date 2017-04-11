@@ -9,6 +9,7 @@ import ctypes
 from ctypes import cdll
 import itertools
 import cma
+from fastloop import get_conditional
 
 lrepc = cdll.LoadLibrary('./librepc.so')
 
@@ -122,7 +123,9 @@ class CMAES(object):
     prior = np.linalg.norm(f_hat)
 
     # conditional
-    conditional = self.calc_conditional(q_hat, 10.0)
+    #conditional = self.calc_conditional(q_hat, 10.0)
+    conditional = get_conditional(q_hat, self.size[0], self.size[1],
+                                  self.tr_target_i, self.tr_target_q, 10.0)
 
     cost = 0*likelihood + 1.0*prior + conditional
     return cost
@@ -149,7 +152,8 @@ class CMAES(object):
     # re-convert input arrays
     q_current = np.reshape(q_current, (q_current.size,))
     f_init = np.reshape(f_init, (f_init.size,))
-    self.tr_target = tr_target
+    self.tr_target_i = np.rint(tr_target[:, 0:3]).astype(int)
+    self.tr_target_q = tr_target[:, 3]
 
     # settings
     opts = cma.CMAOptions()

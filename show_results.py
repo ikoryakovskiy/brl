@@ -23,11 +23,20 @@ from py.my_csv.utils import *
 def main():
 
   ######################################################################################
-  test_compare_qf("cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf2-test-_experiment_agent_policy_representation.dat")
-  return
+  #test_compare_qf("cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf2-test-_experiment_agent_policy_representation.dat")
+  #return
   ######################################################################################
   #diffq("cfg_pendulum_sarsa_grid-it0-mp0-run0-nrbf-test-_experiment_agent_policy_representation.dat",
   #      "cfg_pendulum_sarsa_grid-it0-mp0-run0-nrbf2-test-_experiment_agent_policy_representation.dat")
+
+  size  = (125, 101, 3)
+  offset = size[0]*size[1]
+  Q = load_grid_representation("policies/q_it1-rbf-_experiment_agent_policy_representation.dat")
+  csv_data = csv_read(["trajectories/pendulum_sarsa_grid_rand_play-test-0.csv"])
+  tr = load_trajectories(csv_data)
+  see_by_layers(Q, tr, offset)
+
+  return
 
   Q = load_grid_representation("policies/q_cfg_pendulum_sarsa_grid-it0-mp0-run0-rbf-test-_experiment_agent_policy_representation.dat")
   Q_mean = import_data()[0]
@@ -71,7 +80,7 @@ def diffq(fname0, fname1):
   q0 = load_grid_representation("policies/q_{}".format(fname0))
   q1 = load_grid_representation("policies/q_{}".format(fname1))
 
-  csv_data = csv_read(["trajectories/pendulum_sarsa_grid_play-test-0.csv"])
+  csv_data = csv_read(["trajectories/pendulum_sarsa_grid_rand_play-test-0.csv"])
   tr = load_trajectories(csv_data)
 
   see_by_layers(q0-q1, tr, offset)
