@@ -84,5 +84,5 @@ def import_data(n = 50, save_mean = 0):
   #tv2 = 2*np.maximum( num * [0.0001], data.var(0))
 
   if save_mean:
-    save_grid_representation(data_mean, "policies/cfg_pendulum_sarsa_grid-init-mp0-run0-_experiment_agent_policy_representation.dat")
+    save_grid_representation(data_mean, "policies/q_init-run0-_experiment_agent_policy_representation.dat")
   return (data_mean, data_std)
