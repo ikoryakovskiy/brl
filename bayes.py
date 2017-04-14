@@ -45,13 +45,13 @@ def main(args):
   else:
     fname = args.output_file
 
-  Q_mean = import_data(save_mean = 1)[0]
-  #learn_representation(args, Q_mean, fname = fname)
+  #Q_mean = import_data(save_mean = 1)[0]
+  #learn_representation(args, Q_mean, "init-rbf-run0-_experiment_agent_policy_representation.dat")
 
   Q_current = load_grid_representation("policies/q_init-run0-_experiment_agent_policy_representation.dat")
-  TR_targets = prepare_targets(Q_current, "pendulum_sarsa_grid_rand_play-test-0.csv", 0.97)
+  TR_targets = prepare_targets(Q_current, "q_init-run0.csv", 0.97)
 
-  learn_representation(args, Q_current, TR_targets, "rbf-it1-_experiment_agent_policy_representation.dat")
+  learn_representation(args, Q_current, TR_targets, "rbf-run1-_experiment_agent_policy_representation.dat")
 
 
 
