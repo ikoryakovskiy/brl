@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
-def show_grid_representation(data, field_dims, layout):
+def show_grid_representation(data, field_dims, layout, ax = None):
   if len(data) != np.prod(layout):
     raise Exception("Wrong input size")
 
@@ -23,13 +23,16 @@ def show_grid_representation(data, field_dims, layout):
         norm *= layout[squash[k]]
       m[i][j] = s / norm
 
-  fig = plt.figure()
-  ax = fig.add_subplot(111)
-
+  plt_show = 0
+  if ax is None:
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt_show = 1
+    
   m = np.transpose(m)
   cax = ax.matshow(m, origin='lower')
-  np.seterr(divide='ignore', invalid='ignore')
-  fig.colorbar(cax)
+  #np.seterr(divide='ignore', invalid='ignore')
+  #fig.colorbar(cax)
 
   numrows, numcols = m.shape
   def format_coord(x, y):
@@ -42,7 +45,9 @@ def show_grid_representation(data, field_dims, layout):
           return 'x=%1.4f, y=%1.4f'%(x, y)
 
   ax.format_coord = format_coord
-  plt.show()
+  if plt_show:
+    plt.show()
+  return ax
 
 ######################################################################################
 def waitforbuttonpress():

@@ -51,7 +51,7 @@ def main(args):
   Q_current = load_grid_representation("policies/q_init-run0-_experiment_agent_policy_representation.dat")
   TR_targets = prepare_targets(Q_current, "pendulum_sarsa_grid_rand_play-test-0.csv", 0.97)
 
-  learn_representation(args, Q_current, TR_targets, fname)
+  learn_representation(args, Q_current, TR_targets, "rbf-it1-_experiment_agent_policy_representation.dat")
 
 
 
@@ -64,7 +64,7 @@ def prepare_targets(Q, fname, gamma):
 
 def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.dat"):
   size  = (125, 101, 3)
-  dsize = (3, 3, 3)
+  dsize = (10, 10, 3)
   offset = size[0]*size[1]
   doffset = dsize[0]*dsize[1]
   width = 0.4
