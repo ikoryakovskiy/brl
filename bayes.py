@@ -35,9 +35,9 @@ def main(args):
 
   ##############################################
   #rbf_test()
-  cma_test()
+  #cma_test()
   #mp_cma_test(args)
-  return
+  #return
   ##############################################
 
   if args.output_file is None:
@@ -91,13 +91,24 @@ def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.da
     for i in range(0, 1):
       q_init = Q_init[offset*i:offset*(i+1)]
       show_grid_representation(q_init, (0, 1), (125, 101, 1))
-      Q_current = Q_current[offset*i:offset*(i+1)]
-      show_grid_representation(Q_current, (0, 1), (125, 101, 1))
-      show_grid_representation(Q_hat[offset*i:offset*(i+1)], (0, 1), (125, 101, 1))
+      q_current = Q_current[offset*i:offset*(i+1)]
+      show_grid_representation(q_current, (0, 1), (125, 101, 1))
+      q_hat = Q_hat[offset*i:offset*(i+1)]
+      show_grid_representation(q_hat, (0, 1), (125, 101, 1))
       q_hat_ff = cmaes.evaluate(F_hat[doffset*i:doffset*(i+1)])
       show_grid_representation(q_hat_ff, (0, 1), (125, 101, 1))
 
-    waitforbuttonpress()
+      assert(q_hat == q_hat_ff).all()
+
+      if TR_targets is not None:
+        tr_idxs = np.nonzero(TR_targets[:, 2] == i)[0]
+        tr_target = np.copy(TR_targets[tr_idxs, :])
+        c_tr = cmaes.tr_cost(q_current, tr_target, size[0])
+        print("Current tr cost {}".format(c_tr))
+        c_tr = cmaes.tr_cost(q_hat, tr_target, size[0])
+        print("Next tr cost {}".format(c_tr))
+
+      waitforbuttonpress()
 
 ######################################################################################
 def mp_cma_run(args, Q_current, Q_init, TR_targets, size, dsize, width = 0.4, kind = 'rbf'):
@@ -162,6 +173,7 @@ def cma_test():
   kind = 'rbf'
 
   f_true = np.array([0, 500, 0, 0, 0, -500], dtype='float64')
+  #f_true = np.zeros((dsize[0]*dsize[1],), dtype='float64')
 
   with CMAES(size, dsize, width, kind, name='cma_test') as cmaes:
     q_current_ref = cmaes.evaluate(f_true)
@@ -170,21 +182,28 @@ def cma_test():
     Q_current = np.tile(q_current, 3)
     TR_targets = prepare_targets(Q_current, "pendulum_sarsa_grid_rand_play-test-0.csv", 0.97)
     tr_idxs = np.nonzero(TR_targets[:, 2] == 0)[0]
+    #tr_idxs = [tr_idxs[0]]
     tr_target = TR_targets[tr_idxs, :]
 
     f_init = np.zeros(f_true.shape)
     q_init_ref = cmaes.evaluate(f_init)
     q_init = np.copy(q_init_ref)
 
-    f_hat = cmaes.optimize(q_current, f_init, tr_target)
-    q_hat = cmaes.evaluate(f_hat[0])
+    c_tr = cmaes.tr_cost(q_init, tr_target, size[0])
+    print("Initial tr cost {}".format(c_tr))
 
-    print(np.linalg.norm(q_hat - q_current) + 1*np.linalg.norm(f_hat[0]))
-    print(cmaes.objective(f_hat[0], q_current))
+    f_hat = cmaes.optimize(q_current, f_init, tr_target)
+    q_hat = cmaes.evaluate(f_hat)
+
+    print(np.linalg.norm(q_hat - q_current) + 1*np.linalg.norm(f_hat))
+    print(cmaes.objective(f_hat, q_current))
 
     show_grid_representation(q_init, (0, 1), (size[0], size[1], 1))
     show_grid_representation(q_current, (0, 1), (size[0], size[1], 1))
     show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
+    plt.scatter(tr_target[:,0], tr_target[:,1], c='k', s=40, marker='+')
+    c_tr = cmaes.tr_cost(q_hat, tr_target, size[0])
+    print("Final tr cost {}".format(c_tr))
 
     waitforbuttonpress()
 
@@ -229,10 +248,14 @@ def mp_run(q_currents, q_inits, tr_targets, size, dsize, width, kind, n):
   th_name = multiprocessing.current_process().name
   with CMAES(size, dsize, width, kind, name = th_name) as cmaes:
     f_init = cmaes.initial(q_init)
-    f_hat = cmaes.optimize(q_current, f_init, tr_target)
-    q_hat_ref = cmaes.evaluate(f_hat[0])
+    f_hat, cost0, cost1 = cmaes.optimize(q_current, f_init, tr_target)
+    q_hat_ref = cmaes.evaluate(f_hat)
     q_hat = np.copy(q_hat_ref)
-    return (q_hat, f_hat[0])
+    cost0_ = np.array(cost0)
+    cost1_ = np.array(cost1)
+  print("\tInitial {} cost: {}, {}, {}".format(th_name, cost0_[0], cost0_[1], cost0_[2]))
+  print("\tFinal {} cost: {}, {}, {}".format(th_name, cost1_[0], cost1_[1], cost1_[2]))
+  return (q_hat, f_hat)
 
 ######################################################################################
 def do_multiprocessing_pool(args, q_currents, q_inits, tr_targets, size, dsize, width, kind):

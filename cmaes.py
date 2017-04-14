@@ -17,6 +17,9 @@ class CMAES(object):
   dnum = 0
   num = 0
   tr_target = None
+  wlh = 1.0
+  wp = 1.0
+  wc = 1.0
 
   def __init__(self, size, dsize, width = 0.4, kind = 'rbf', name = 'default'):
     if (size[2] != dsize[2]):
@@ -115,37 +118,24 @@ class CMAES(object):
   def objective(self, f_hat, *args):
     q_current = args[0]
 
-    # likelihood
     q_hat = self.evaluate(f_hat)
+
     likelihood = np.linalg.norm(q_hat - q_current)
-
-    # prior
     prior = np.linalg.norm(f_hat)
-
-    # conditional
-    #conditional = self.calc_conditional(q_hat, 10.0)
     conditional = get_conditional(q_hat, self.size[0], self.size[1],
                                   self.tr_target_i, self.tr_target_q, 10.0)
-
-    cost = 0*likelihood + 1.0*prior + conditional
+    cost = self.wlh * likelihood + self.wp * prior + self.wc * conditional
     return cost
 
-  def calc_conditional(self, q_hat, sigma2):
-    cond = 0
-    if self.tr_target is not None:
-      for t_idx in range(0, self.tr_target.shape[0]):
-        ti, tj, tk, tq = self.tr_target[t_idx, :]
-        q_diff = np.abs(q_hat - tq)
-        for i in range(0, self.size[0]):
-          for j in range(0, self.size[1]):
-            idx = i + j * self.size[0]
-            di = i-ti
-            dj = j-tj
-            v = q_diff[idx] * np.exp(-(di*di+dj*dj)/sigma2)
-            cond += v
-            #if v > 1:
-            #    print(self.state[idx], tq, i-ti, j-tj, v)
-    return cond
+  def tr_cost(self, q, tr_target, height):
+    cost = 0
+    for i in range(tr_target.shape[0]):
+      ti = tr_target[i, 0]
+      tj = tr_target[i, 1]
+      tq = tr_target[i, 3]
+      cost += (q[ti + tj*height] - tq)**2
+    cost /= float(tr_target.shape[0])
+    return cost
 
   def optimize(self, q_current, f_init, tr_target):
 
@@ -166,4 +156,27 @@ class CMAES(object):
     # finalize
     res = es.result()
     es.stop()
-    return res
+
+    # Calculate initial
+    q_hat = self.evaluate(f_init)
+    f_current = self.initial(q_current)
+
+    likelihood = np.linalg.norm(q_hat - q_current)
+    prior = np.linalg.norm(f_current)
+    conditional = get_conditional(q_current, self.size[0], self.size[1],
+                                  self.tr_target_i, self.tr_target_q, 10.0)
+    costs0 = (self.wlh * likelihood, self.wp * prior, self.wc * conditional)
+
+    # ... and final costs:
+    f_hat = res[0]
+    q_hat = self.evaluate(f_hat)
+
+    likelihood = np.linalg.norm(q_hat - q_current)
+    prior = np.linalg.norm(f_hat)
+    conditional = get_conditional(q_hat, self.size[0], self.size[1],
+                                  self.tr_target_i, self.tr_target_q, 10.0)
+
+    costs1 = (self.wlh * likelihood, self.wp * prior, self.wc * conditional)
+
+    np.testing.assert_almost_equal(sum(costs1), res[1], verbose=True)
+    return res[0], costs0, costs1

@@ -28,6 +28,7 @@ def show_grid_representation(data, field_dims, layout):
 
   m = np.transpose(m)
   cax = ax.matshow(m, origin='lower')
+  np.seterr(divide='ignore', invalid='ignore')
   fig.colorbar(cax)
 
   numrows, numcols = m.shape
