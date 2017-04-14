@@ -64,7 +64,7 @@ def prepare_targets(Q, fname, gamma):
 
 def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.dat"):
   size  = (125, 101, 3)
-  dsize = (10, 10, 3)
+  dsize = (3, 3, 3)
   offset = size[0]*size[1]
   doffset = dsize[0]*dsize[1]
   width = 0.4
@@ -76,8 +76,9 @@ def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.da
     kind = 'rbf'
 
   Q_init = np.zeros(Q_current.size)
-
+  start = time.time()
   Q_hat, F_hat = mp_cma_run(args, Q_current, Q_init, TR_targets, size, dsize, width, kind)
+  print("Required time: {}".format(time.time() - start))
 
   # Saving
   Q_hat.tofile("policies/q_{}".format(fname))

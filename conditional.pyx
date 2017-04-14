@@ -34,7 +34,7 @@ def get_conditional(np.ndarray[DTYPE_t, ndim=1] q_hat, int height, int width,
   cdef unsigned int tr_idx, ti, tj, tk, i, j
   cdef int di, dj
 
-  for tr_idx in prange(tr_num, nogil=True):
+  for tr_idx in prange(tr_num, nogil=True): #range(tr_num): #
     ti = tr_target_i[tr_idx, 0]
     tj = tr_target_i[tr_idx, 1]
     tq = tr_target_q[tr_idx]
