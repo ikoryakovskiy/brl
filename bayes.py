@@ -46,21 +46,30 @@ def main(args):
   else:
     fname = args.output_file
 
-  Q_mean = import_data(save_mean = 0)[0]
-  learn_representation(args, Q_mean, fname = "init-rbf-run0-_experiment_agent_policy_representation.dat")
+  # RBF check
+  #Q_mean = import_data(save_mean = 0)[0]
+  #learn_representation(args, Q_mean, fname = "init-rbf-run0-_experiment_agent_policy_representation.dat")
 
+  # run0
   #Q_current = load_grid_representation("policies/q_init-run0-_experiment_agent_policy_representation.dat")
-  #TR_targets = prepare_targets(Q_current, "q_init-run0.csv", 0.97)
-
+  #TR_targets = prepare_targets(Q_current, ["q_init-run0.csv"], 0.97)
   #learn_representation(args, Q_current, TR_targets, fname = "rbf-run1-_experiment_agent_policy_representation.dat")
 
+  # run1
+  Q_current = load_grid_representation("policies/q_rbf-run1-_experiment_agent_policy_representation.dat")
+  TR_targets = prepare_targets(Q_current, ["q_init-run0.csv", "q_rbf-run1.csv"], 0.97)
+  learn_representation(args, Q_current, TR_targets, fname = "rbf-run2-_experiment_agent_policy_representation.dat")
 
 
-def prepare_targets(Q, fname, gamma):
-  csv_data = csv_read(["trajectories/{}".format(fname)])
-  trajectories = load_trajectories(csv_data)
 
-  targets = real_targets(Q, trajectories, gamma)
+def prepare_targets(Q, fnames, gamma):
+  targets = np.empty((0, 4))
+  for fname in fnames:
+    csv_data = csv_read(["trajectories/{}".format(fname)])
+    trajectories = load_trajectories(csv_data)
+
+    target = real_targets(Q, trajectories, gamma)
+    targets = np.vstack((targets, target))
   return targets
 
 def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.dat"):

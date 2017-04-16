@@ -34,6 +34,7 @@ def real_targets(tm, tr, gamma):
   #print(tm.shape)
   #print (tr)
   tg = np.empty((0, 4))
+  td = np.empty((0, 4))
   for record in range(0, tr.shape[0]):
     #print(tr[record, :])
     #print (record)
@@ -60,7 +61,8 @@ def real_targets(tm, tr, gamma):
     value = tm[int(x0 + dim[0]*xd0 + np.prod(dim)*u0)]
     print(value, " -> ", target)
     tg = np.vstack((tg, [x0, xd0, u0, target]))
-  return tg
+    #td = np.vstack((td, [x1, xd1, u1, value - target]))
+  return tg#, td
 
 def ijk2idx(dim, i, j, k):
     return i + dim[0]*j + dim[0]*dim[1]*k
