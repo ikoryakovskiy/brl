@@ -32,6 +32,7 @@ from py.my_rl.gridworld import *
 from py.my_csv.utils import *
 
 def main(args):
+  # Use no more then 9 cores!
 
   ##############################################
   #rbf_test()
@@ -45,13 +46,13 @@ def main(args):
   else:
     fname = args.output_file
 
-  #Q_mean = import_data(save_mean = 1)[0]
-  #learn_representation(args, Q_mean, "init-rbf-run0-_experiment_agent_policy_representation.dat")
+  Q_mean = import_data(save_mean = 0)[0]
+  learn_representation(args, Q_mean, fname = "init-rbf-run0-_experiment_agent_policy_representation.dat")
 
-  Q_current = load_grid_representation("policies/q_init-run0-_experiment_agent_policy_representation.dat")
-  TR_targets = prepare_targets(Q_current, "q_init-run0.csv", 0.97)
+  #Q_current = load_grid_representation("policies/q_init-run0-_experiment_agent_policy_representation.dat")
+  #TR_targets = prepare_targets(Q_current, "q_init-run0.csv", 0.97)
 
-  learn_representation(args, Q_current, TR_targets, "rbf-run1-_experiment_agent_policy_representation.dat")
+  #learn_representation(args, Q_current, TR_targets, fname = "rbf-run1-_experiment_agent_policy_representation.dat")
 
 
 
@@ -64,7 +65,7 @@ def prepare_targets(Q, fname, gamma):
 
 def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.dat"):
   size  = (125, 101, 3)
-  dsize = (3, 3, 3)
+  dsize = (10, 10, 3)
   offset = size[0]*size[1]
   doffset = dsize[0]*dsize[1]
   width = 0.4

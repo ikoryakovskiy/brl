@@ -129,12 +129,13 @@ class CMAES(object):
 
   def tr_cost(self, q, tr_target, height):
     cost = 0
-    for i in range(tr_target.shape[0]):
-      ti = tr_target[i, 0]
-      tj = tr_target[i, 1]
-      tq = tr_target[i, 3]
-      cost += (q[ti + tj*height] - tq)**2
-    cost /= float(tr_target.shape[0])
+    if tr_target is not None:
+      for i in range(tr_target.shape[0]):
+        ti = tr_target[i, 0]
+        tj = tr_target[i, 1]
+        tq = tr_target[i, 3]
+        cost += (q[ti + tj*height] - tq)**2
+      cost /= float(tr_target.shape[0])
     return cost
 
   def optimize(self, q_current, f_init, tr_target):
@@ -142,8 +143,9 @@ class CMAES(object):
     # re-convert input arrays
     q_current = np.reshape(q_current, (q_current.size,))
     f_init = np.reshape(f_init, (f_init.size,))
-    self.tr_target_i = np.rint(tr_target[:, 0:3]).astype(int)
-    self.tr_target_q = tr_target[:, 3]
+    if tr_target is not None:
+      self.tr_target_i = np.rint(tr_target[:, 0:3]).astype(int)
+      self.tr_target_q = tr_target[:, 3]
 
     # settings
     opts = cma.CMAOptions()
