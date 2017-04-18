@@ -116,11 +116,11 @@ class CMAES(object):
     return np.frombuffer(array_pointer.contents)
 
   def objective(self, f_hat, *args):
-    q_current = args[0]
+    q_data = args[0]
 
     q_hat = self.evaluate(f_hat)
 
-    likelihood = np.linalg.norm(q_hat - q_current)
+    likelihood = np.linalg.norm(q_hat - q_data)
     prior = np.linalg.norm(f_hat)
     conditional = get_conditional(q_hat, self.size[0], self.size[1],
                                   self.tr_target_i, self.tr_target_q, 10.0)
@@ -138,10 +138,10 @@ class CMAES(object):
       cost /= float(tr_target.shape[0])
     return cost
 
-  def optimize(self, q_current, f_init, tr_target):
+  def optimize(self, q_data, f_init, tr_target):
 
     # re-convert input arrays
-    q_current = np.reshape(q_current, (q_current.size,))
+    q_data = np.reshape(q_data, (q_data.size,))
     f_init = np.reshape(f_init, (f_init.size,))
     if tr_target is not None:
       self.tr_target_i = np.rint(tr_target[:, 0:3]).astype(int)
@@ -153,7 +153,7 @@ class CMAES(object):
 
     # actual run with
     es = cma.CMAEvolutionStrategy(f_init, 1, opts)
-    es.optimize(self.objective, args = (q_current,)) # , 3, 3
+    es.optimize(self.objective, args = (q_data,)) # , 3, 3
 
     # finalize
     res = es.result()
@@ -161,11 +161,11 @@ class CMAES(object):
 
     # Calculate initial
     q_hat = self.evaluate(f_init)
-    f_current = self.initial(q_current)
+    f_current = self.initial(q_data)
 
-    likelihood = np.linalg.norm(q_hat - q_current)
+    likelihood = np.linalg.norm(q_hat - q_data)
     prior = np.linalg.norm(f_current)
-    conditional = get_conditional(q_current, self.size[0], self.size[1],
+    conditional = get_conditional(q_data, self.size[0], self.size[1],
                                   self.tr_target_i, self.tr_target_q, 10.0)
     costs0 = (self.wlh * likelihood, self.wp * prior, self.wc * conditional)
 
@@ -173,7 +173,7 @@ class CMAES(object):
     f_hat = res[0]
     q_hat = self.evaluate(f_hat)
 
-    likelihood = np.linalg.norm(q_hat - q_current)
+    likelihood = np.linalg.norm(q_hat - q_data)
     prior = np.linalg.norm(f_hat)
     conditional = get_conditional(q_hat, self.size[0], self.size[1],
                                   self.tr_target_i, self.tr_target_q, 10.0)

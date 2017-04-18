@@ -49,16 +49,16 @@ def main(args):
   # RBF check
   #Q_mean = import_data(save_mean = 0)[0]
   #learn_representation(args, Q_mean, fname = "init-rbf-run0-_experiment_agent_policy_representation.dat")
+  Q_init = load_grid_representation("policies/q_init-run0-_experiment_agent_policy_representation.dat")
 
   # run0
-  #Q_current = load_grid_representation("policies/q_init-run0-_experiment_agent_policy_representation.dat")
-  #TR_targets = prepare_targets(Q_current, ["q_init-run0.csv"], 0.97)
-  #learn_representation(args, Q_current, TR_targets, fname = "rbf-run1-_experiment_agent_policy_representation.dat")
+  #TR_targets = prepare_targets(Q_data, ["q_init-run0.csv"], 0.97)
+  #learn_representation(args, Q_init, TR_targets, fname = "rbf-run1-_experiment_agent_policy_representation.dat")
 
   # run1
-  Q_current = load_grid_representation("policies/q_rbf-run1-_experiment_agent_policy_representation.dat")
-  TR_targets = prepare_targets(Q_current, ["q_init-run0.csv", "q_rbf-run1.csv"], 0.97)
-  learn_representation(args, Q_current, TR_targets, fname = "rbf-run2-_experiment_agent_policy_representation.dat")
+  Q_run1 = load_grid_representation("policies/q_rbf-run1-_experiment_agent_policy_representation.dat")
+  TR_targets = prepare_targets(Q_run1, ["q_init-run0.csv", "q_rbf-run1.csv"], 0.97)
+  learn_representation(args, Q_init, TR_targets, fname = "rbf-run2-_experiment_agent_policy_representation.dat")
 
 
 
@@ -72,7 +72,7 @@ def prepare_targets(Q, fnames, gamma):
     targets = np.vstack((targets, target))
   return targets
 
-def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.dat"):
+def learn_representation(args, Q_data, TR_targets = None, fname = "deafult.dat"):
   size  = (125, 101, 3)
   dsize = (10, 10, 3)
   offset = size[0]*size[1]
@@ -85,9 +85,9 @@ def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.da
   else:
     kind = 'rbf'
 
-  Q_init = np.zeros(Q_current.size)
+  Q_init = np.zeros(Q_data.size)
   start = time.time()
-  Q_hat, F_hat = mp_cma_run(args, Q_current, Q_init, TR_targets, size, dsize, width, kind)
+  Q_hat, F_hat = mp_cma_run(args, Q_data, Q_init, TR_targets, size, dsize, width, kind)
   print("Required time: {}".format(time.time() - start))
 
   # Saving
@@ -102,8 +102,8 @@ def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.da
     for i in range(0, 1):
       q_init = Q_init[offset*i:offset*(i+1)]
       show_grid_representation(q_init, (0, 1), (125, 101, 1))
-      q_current = Q_current[offset*i:offset*(i+1)]
-      show_grid_representation(q_current, (0, 1), (125, 101, 1))
+      q_data = Q_data[offset*i:offset*(i+1)]
+      show_grid_representation(q_data, (0, 1), (125, 101, 1))
       q_hat = Q_hat[offset*i:offset*(i+1)]
       show_grid_representation(q_hat, (0, 1), (125, 101, 1))
       q_hat_ff = cmaes.evaluate(F_hat[doffset*i:doffset*(i+1)])
@@ -114,7 +114,7 @@ def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.da
       if TR_targets is not None:
         tr_idxs = np.nonzero(TR_targets[:, 2] == i)[0]
         tr_target = np.copy(TR_targets[tr_idxs, :])
-        c_tr = cmaes.tr_cost(q_current, tr_target, size[0])
+        c_tr = cmaes.tr_cost(q_data, tr_target, size[0])
         print("Current tr cost {}".format(c_tr))
         c_tr = cmaes.tr_cost(q_hat, tr_target, size[0])
         print("Next tr cost {}".format(c_tr))
@@ -122,7 +122,7 @@ def learn_representation(args, Q_current, TR_targets = None, fname = "deafult.da
       waitforbuttonpress()
 
 ######################################################################################
-def mp_cma_run(args, Q_current, Q_init, TR_targets, size, dsize, width = 0.4, kind = 'rbf'):
+def mp_cma_run(args, Q_data, Q_init, TR_targets, size, dsize, width = 0.4, kind = 'rbf'):
   if (size[2] != dsize[2]):
     raise ValueError('CMAES::init Dimensions are not correct')
 
@@ -131,11 +131,11 @@ def mp_cma_run(args, Q_current, Q_init, TR_targets, size, dsize, width = 0.4, ki
   offset = size[0]*size[1]
   actions = size[2]
 
-  q_currents = []
+  q_datas = []
   q_inits = []
   tr_targets = []
   for i in range(actions):
-    q_currents.append(Q_current[offset*i:offset*(i+1)])
+    q_datas.append(Q_data[offset*i:offset*(i+1)])
     q_inits.append(Q_init[offset*i:offset*(i+1)])
     if TR_targets is not None:
       tr_idxs = np.nonzero(TR_targets[:, 2] == i)[0]
@@ -145,7 +145,7 @@ def mp_cma_run(args, Q_current, Q_init, TR_targets, size, dsize, width = 0.4, ki
 
   mp_size = (size[0], size[1], 1)
   mp_dsize = (dsize[0], dsize[1], 1)
-  res = do_multiprocessing_pool(args, q_currents, q_inits, tr_targets, mp_size, mp_dsize, width, kind)
+  res = do_multiprocessing_pool(args, q_datas, q_inits, tr_targets, mp_size, mp_dsize, width, kind)
 
   Q_hat = np.empty(Q_init.shape)
   F_hat = np.empty(dnum, )
@@ -187,11 +187,11 @@ def cma_test():
   #f_true = np.zeros((dsize[0]*dsize[1],), dtype='float64')
 
   with CMAES(size, dsize, width, kind, name='cma_test') as cmaes:
-    q_current_ref = cmaes.evaluate(f_true)
-    q_current = np.copy(q_current_ref)
+    q_data_ref = cmaes.evaluate(f_true)
+    q_data = np.copy(q_data_ref)
 
-    Q_current = np.tile(q_current, 3)
-    TR_targets = prepare_targets(Q_current, "pendulum_sarsa_grid_rand_play-test-0.csv", 0.97)
+    Q_data = np.tile(q_data, 3)
+    TR_targets = prepare_targets(Q_data, "pendulum_sarsa_grid_rand_play-test-0.csv", 0.97)
     tr_idxs = np.nonzero(TR_targets[:, 2] == 0)[0]
     #tr_idxs = [tr_idxs[0]]
     tr_target = TR_targets[tr_idxs, :]
@@ -203,14 +203,14 @@ def cma_test():
     c_tr = cmaes.tr_cost(q_init, tr_target, size[0])
     print("Initial tr cost {}".format(c_tr))
 
-    f_hat = cmaes.optimize(q_current, f_init, tr_target)
+    f_hat = cmaes.optimize(q_data, f_init, tr_target)
     q_hat = cmaes.evaluate(f_hat)
 
-    print(np.linalg.norm(q_hat - q_current) + 1*np.linalg.norm(f_hat))
-    print(cmaes.objective(f_hat, q_current))
+    print(np.linalg.norm(q_hat - q_data) + 1*np.linalg.norm(f_hat))
+    print(cmaes.objective(f_hat, q_data))
 
     show_grid_representation(q_init, (0, 1), (size[0], size[1], 1))
-    show_grid_representation(q_current, (0, 1), (size[0], size[1], 1))
+    show_grid_representation(q_data, (0, 1), (size[0], size[1], 1))
     show_grid_representation(q_hat, (0, 1), (size[0], size[1], 1))
     plt.scatter(tr_target[:,0], tr_target[:,1], c='k', s=40, marker='+')
     c_tr = cmaes.tr_cost(q_hat, tr_target, size[0])
@@ -227,23 +227,23 @@ def mp_cma_test(args):
   pools = 2
   kind = 'rbf'
 
-  Q_currents = []
+  Q_datas = []
   q_inits = []
   for i in range(pools):
-    Q_current = np.zeros((num,1))
+    Q_data = np.zeros((num,1))
     for x in range(0, size[0]):
       for y in range(0, size[1]):
         cx = size[0]/2.0
         cy = size[1]/2.0
-        Q_current[x+y*size[0]] = 6000-(x-cx)*(x-cx) + (y-cy)*(y-cy)
-    Q_currents.append(Q_current)
+        Q_data[x+y*size[0]] = 6000-(x-cx)*(x-cx) + (y-cy)*(y-cy)
+    Q_datas.append(Q_data)
     q_inits.append(np.zeros((num,1)))
 
-  qf_hats = do_multiprocessing_pool(args, Q_currents, q_inits, size, dsize, width, kind)
+  qf_hats = do_multiprocessing_pool(args, Q_datas, q_inits, size, dsize, width, kind)
 
   for i in range(pools):
     show_grid_representation(q_inits[i], (0, 1), (size[0], size[1], 1))
-    show_grid_representation(Q_currents[i], (0, 1), (size[0], size[1], 1))
+    show_grid_representation(Q_datas[i], (0, 1), (size[0], size[1], 1))
     qf_hat = qf_hats[i]
     q_hat = qf_hat[0]
     #f_hat = qf_hat[1]
@@ -252,14 +252,14 @@ def mp_cma_test(args):
   waitforbuttonpress()
 
 ######################################################################################
-def mp_run(q_currents, q_inits, tr_targets, size, dsize, width, kind, n):
-  q_current = q_currents[n]
+def mp_run(q_datas, q_inits, tr_targets, size, dsize, width, kind, n):
+  q_data = q_datas[n]
   q_init = q_inits[n]
   tr_target = tr_targets[n]
   th_name = multiprocessing.current_process().name
   with CMAES(size, dsize, width, kind, name = th_name) as cmaes:
     f_init = cmaes.initial(q_init)
-    f_hat, cost0, cost1 = cmaes.optimize(q_current, f_init, tr_target)
+    f_hat, cost0, cost1 = cmaes.optimize(q_data, f_init, tr_target)
     q_hat_ref = cmaes.evaluate(f_hat)
     q_hat = np.copy(q_hat_ref)
     cost0_ = np.array(cost0)
@@ -269,15 +269,15 @@ def mp_run(q_currents, q_inits, tr_targets, size, dsize, width, kind, n):
   return (q_hat, f_hat)
 
 ######################################################################################
-def do_multiprocessing_pool(args, q_currents, q_inits, tr_targets, size, dsize, width, kind):
+def do_multiprocessing_pool(args, q_datas, q_inits, tr_targets, size, dsize, width, kind):
   """Do multiprocesing"""
-  if (len(q_currents) != len(q_inits)):
+  if (len(q_datas) != len(q_inits)):
     raise ValueError('bayes::do_multiprocessing_pool Input dimensions are not correct')
-  if (len(q_currents) != len(tr_targets)):
+  if (len(q_datas) != len(tr_targets)):
     raise ValueError('bayes::do_multiprocessing_pool Input dimensions are not correct {tr_targets}')
   pool = multiprocessing.Pool(args.cores)
-  func = partial(mp_run, q_currents, q_inits, tr_targets, size, dsize, width, kind)
-  res = pool.map(func, range(0, len(q_currents)))
+  func = partial(mp_run, q_datas, q_inits, tr_targets, size, dsize, width, kind)
+  res = pool.map(func, range(0, len(q_datas)))
   pool.close()
   pool.join()
   return res
