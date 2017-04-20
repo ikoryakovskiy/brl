@@ -41,6 +41,13 @@ def main(args):
   #return
   ##############################################
 
+  if args.embed:
+    Q_init = load_grid_representation(args.dat_init)
+    Q_run = load_grid_representation(args.dat_run)
+    TR_targets = prepare_targets(Q_run, args.csv, 0.97)
+    learn_representation(args, Q_init, TR_targets, args.output_file)
+    return
+
   if args.output_file is None:
     fname = "it1-rbf-_experiment_agent_policy_representation.dat"
   else:
@@ -68,7 +75,7 @@ def prepare_targets(Q, fnames, gamma):
     csv_data = csv_read(["trajectories/{}".format(fname)])
     trajectories = load_trajectories(csv_data)
 
-    target = real_targets(Q, trajectories, gamma)
+    target = real_targets_qlearning(Q, trajectories, gamma)
     targets = np.vstack((targets, target))
   return targets
 
@@ -291,6 +298,10 @@ if __name__ == "__main__":
   parser.add_argument("-o", "--output_file", help="Output file")
   parser.add_argument("-r", "--rbf", action='store_true', help="Use RBF in representation")
   parser.add_argument("-n", "--nrbf", action='store_true', help="Use NRBF in representation")
+  parser.add_argument("-e", "--embed", action='store_true', help="Embeding into external loop")
+  parser.add_argument("-i", "--dat_init", help="Initial dat file")
+  parser.add_argument("-u", "--dat_run", help="dat file from previous iteration")
+  parser.add_argument("-t", "--csv", nargs='+', help="CSV trajectories")
   args = parser.parse_args()
 
   print (args)

@@ -1,0 +1,26 @@
+Black-box variational inference (MCMC with gradients, Ranganath 2014)
+
+Quality of prediction and estimates of uncertainty (e.g. financial risk estimation and how accurate they are)
+
+
+Complex inference 53000
+Required time: 49649.6730149 3 cores
+Required time: 33292.996701 4 cores
+No conditional time: 3062.42752004
+
+advaseral workshop: adviseral examples for *density models*
+Learning to learn framework (variational autoencoder blends priors and likelihoods)
+
+putting casuality on models (control theory)
+
+Google brain: hypernetworks (low-dimentional inputs unpacked )
+
+Shakir Mohamed (DeepMind)	: 1) Bsyesian policy search (instance of variational MDP)
+                               - Bayesian Nonparametric Multi-Optima Policy Search in Reinforcement Learning
+                            2) Loss-callibrated bayesian - when loss is added to bayesian
+                            3) Charls : Bayesian Hyperparameter Optimization for Ensemble Learning
+
+
+What to improve in current algorithm:
+1) Add negative reward for terminal states (otherwise for terminal state target gets higher, since no value function is used)
+2) Change sarsa update rule to Q-learning (otherwise same state and action are backed up to a different value)
