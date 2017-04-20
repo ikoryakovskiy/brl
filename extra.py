@@ -28,7 +28,7 @@ def discretize(data, steps, bound):
   return np.round((data-bound[0])/delta).astype(np.int64)
 
 
-def real_targets(tm, tr, gamma):
+def real_targets_sarsa(tm, tr, gamma):
   dim = (125, 101)
   #print(type(tm))
   #print(tm.shape)
@@ -63,6 +63,31 @@ def real_targets(tm, tr, gamma):
     tg = np.vstack((tg, [x0, xd0, u0, target]))
     #td = np.vstack((td, [x1, xd1, u1, value - target]))
   return tg#, td
+
+def real_targets_qlearning(tm, tr, gamma):
+  dim = (125, 101)
+  tg = np.empty((0, 4))
+  for record in range(0, tr.shape[0]):
+    x0  = tr[record, 0]
+    xd0 = tr[record, 1]
+    u0  = tr[record, 4]
+    r   = tr[record, 5]
+    t   = tr[record, 6]
+    if (t != 2):
+      # normal transition => maximize over any next action
+      x1  = tr[record, 2]
+      xd1 = tr[record, 3]
+      target_next = (tm[int(x1 + dim[0]*xd1 + np.prod(dim)*0)],
+                     tm[int(x1 + dim[0]*xd1 + np.prod(dim)*1)],
+                     tm[int(x1 + dim[0]*xd1 + np.prod(dim)*2)])
+      target = r + gamma*max(target_next)
+    elif (t == 2):
+      # absorbing transition => next action is not needed => update with negative reward only
+      target = r
+    value = tm[int(x0 + dim[0]*xd0 + np.prod(dim)*u0)]
+    print(value, " -> ", target)
+    tg = np.vstack((tg, [x0, xd0, u0, target]))
+  return tg
 
 def ijk2idx(dim, i, j, k):
     return i + dim[0]*j + dim[0]*dim[1]*k
