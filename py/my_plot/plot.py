@@ -3,6 +3,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 def show_grid_representation(data, field_dims, layout, ax = None):
   if len(data) != np.prod(layout):
@@ -28,10 +30,19 @@ def show_grid_representation(data, field_dims, layout, ax = None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt_show = 1
+  fig = ax.get_figure()  
     
   m = np.transpose(m)
-  cax = ax.matshow(m, origin='lower')
+  ms = ax.matshow(m, origin='lower')
+    
+  # create an axes on the right side of ax. The width of cax will be 5%
+  # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+  divider = make_axes_locatable(ax)
+  cax = divider.append_axes("right", size="5%", pad=0.05)
+
   #np.seterr(divide='ignore', invalid='ignore')
+  #cax = fig.add_axes([0.27, 0.8, 0.5, 0.05])
+  fig.colorbar(ms, cax=cax)
   #fig.colorbar(cax)
 
   numrows, numcols = m.shape
