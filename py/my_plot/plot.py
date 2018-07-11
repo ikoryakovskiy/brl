@@ -4,7 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import os
 
+plt.rcParams['svg.fonttype'] = 'none'
+plt.rcParams['font.size'] = 14
+plt.rcParams['axes.unicode_minus'] = False
 
 def show_grid_representation(data, field_dims, layout, ax = None):
   if len(data) != np.prod(layout):
@@ -30,11 +34,11 @@ def show_grid_representation(data, field_dims, layout, ax = None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt_show = 1
-  fig = ax.get_figure()  
-    
+  fig = ax.get_figure()
+
   m = np.transpose(m)
   ms = ax.matshow(m, origin='lower')
-    
+
   # create an axes on the right side of ax. The width of cax will be 5%
   # of ax and the padding between cax and ax will be fixed at 0.05 inch.
   divider = make_axes_locatable(ax)
@@ -60,7 +64,48 @@ def show_grid_representation(data, field_dims, layout, ax = None):
     plt.show()
   return ax
 
-######################################################################################
+
+###############################################################################
 def waitforbuttonpress():
   if (matplotlib.get_backend() != 'agg'):
     plt.waitforbuttonpress()
+
+
+###############################################################################
+def export_plot(filenamebase, export_area_drawing = True, export_latex = True):
+
+  plt.savefig("{}_l.pdf".format(filenamebase))
+
+  if export_latex:
+    ead = ''
+    if export_area_drawing:
+      ead = '--export-area-drawing'
+
+    el = '--export-latex'
+    plt.savefig("{}.svg".format(filenamebase))
+    cmd = ''' env -u LD_LIBRARY_PATH inkscape -T -f {0}.svg \
+              --export-background-opacity=0 \
+              {1} {2} --export-pdf={0}.pdf'''.format(filenamebase, ead, el)
+    os.system(cmd)
+    os.system('rm {}.svg'.format(filenamebase))
+
+
+###############################################################################
+def limits(df, spacing=0.1):
+  space = df.max()-df.min()
+  mmin = df.min()-spacing*space
+  mmax = df.max()+spacing*space
+  return [mmin, mmax]
+
+
+
+
+
+
+
+
+
+
+
+
+
